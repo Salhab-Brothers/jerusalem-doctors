@@ -1,5 +1,7 @@
 # Jerusalem Doctors Directory, Execution Plan (MVP)
 
+> **Historical.** This is the plan the first version was built from (May 2026). It is kept for the reasoning behind the early decisions, not as a description of the system today. Things that changed since: the app is on Next.js 16 (not 14); codes are sent by SMS through SMS4FREE, and the Meta WhatsApp sender is wired in but unused (Twilio is not used); every new signup waits for an admin (#16); the team signs in by email, password and an authenticator; the MoH registry is refreshed weekly, with our own doctors' licences checked nightly. For how it works now, read the [README](../README.md) and [the runbook](runbook.md).
+
 
 ## 1. Product Understanding
 
