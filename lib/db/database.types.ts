@@ -451,6 +451,9 @@ isOneToOne: false
 "registry_specialty":
 { Args: { "d": Omit<Database["public"]['Tables']["doctors"]['Row'], Database["public"]['Tables']["doctors"]['ComputedFields']> }; Returns: string
                            },
+"revoke_user_sessions":
+{ Args: { "p_user_id": string }; Returns: number
+                           },
 "save_doctor_profile":
 { Args: { "p_doctor_id": string,"p_specialty_ids": (string)[],"p_updates": Json,"p_workplaces": Json }; Returns: undefined
                            },

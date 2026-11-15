@@ -3,6 +3,8 @@
 // whole or not at all (0014).
 
 import { expect, test } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
+import { ANON_KEY, PASSWORD, SUPABASE_URL } from "../env";
 import { seededIds } from "../helpers";
 import { DOCTORS, LISTED, serviceClient } from "../seed";
 
@@ -108,5 +110,34 @@ test.describe("save_doctor_profile()", () => {
     });
     expect(error).not.toBeNull();
     expect(await read(id)).toEqual(before);
+  });
+});
+
+test.describe("revoke_user_sessions()", () => {
+  test("ends one user's logins, and only theirs", async () => {
+    const db = serviceClient();
+    const opts = { auth: { persistSession: false, autoRefreshToken: false } };
+    // Two throwaway users, so the seeded accounts' stored sessions stay valid.
+    const make = async (email: string) => {
+      const created = await db.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
+      expect(created.error).toBeNull();
+      const client = createClient(SUPABASE_URL, ANON_KEY, opts);
+      const { data, error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
+      expect(error).toBeNull();
+      return { id: created.data.user!.id, refresh: data.session!.refresh_token };
+    };
+    const target = await make("revoke-target@example.test");
+    const bystander = await make("revoke-bystander@example.test");
+    try {
+      const { data, error } = await db.rpc("revoke_user_sessions", { p_user_id: target.id });
+      expect(error).toBeNull();
+      expect(data).toBeGreaterThanOrEqual(1);
+      const refresh = (token: string) => createClient(SUPABASE_URL, ANON_KEY, opts).auth.refreshSession({ refresh_token: token });
+      expect((await refresh(target.refresh)).error).not.toBeNull();
+      expect((await refresh(bystander.refresh)).error).toBeNull();
+    } finally {
+      await db.auth.admin.deleteUser(target.id);
+      await db.auth.admin.deleteUser(bystander.id);
+    }
   });
 });

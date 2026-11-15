@@ -13,6 +13,7 @@ import { CAREER_STAGES, RESIDENCY_YEAR_MIN } from "@/lib/careerStage";
 import { FEATURED_KINDS } from "@/lib/directory";
 import { jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
 import { requireAdminOrNull } from "@/lib/auth/adminApi";
+import { revokeSessions } from "@/lib/auth/revokeSessions";
 import { refuseAdminTarget } from "@/lib/auth/adminTarget";
 import { allPhotoPaths, PHOTO_BUCKET } from "@/lib/photo";
 import type { TablesUpdate } from "@/lib/db/database.types";
@@ -96,7 +97,7 @@ export const PATCH = withJsonErrors(async (
 
   const current = await service
     .from("doctors")
-    .select("license_verification_status, is_admin_approved, is_active, is_admin")
+    .select("license_verification_status, is_admin_approved, is_active, is_admin, auth_user_id")
     .eq("id", id)
     .maybeSingle();
   if (current.error && current.error.code !== "PGRST116") {
@@ -184,6 +185,8 @@ export const PATCH = withJsonErrors(async (
     if (now.data?.is_admin_approved) return jsonOk({ ok: true, unchanged: true });
     return jsonError(409, { error: "account_closed", code: "account_closed" });
   }
+  // Suspended: their logins end now, not whenever a token next expires.
+  if (fields.is_active === false) await revokeSessions(service, current.data.auth_user_id, "suspend");
   // Approving, hiding or featuring shows on every dashboard at once.
   directoryChanged();
 

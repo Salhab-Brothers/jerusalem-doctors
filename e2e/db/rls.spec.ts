@@ -170,6 +170,7 @@ test.describe("row-level security", () => {
       search_directory: {},
       directory_counts: {},
       record_daily_metrics: { p_day: "2001-01-01" },
+      revoke_user_sessions: { p_user_id: ids.laila },
       save_doctor_profile: { p_doctor_id: ids.laila, p_updates: { bio: "x" }, p_specialty_ids: null, p_workplaces: null },
     };
     for (const fn of Object.keys(ARGS)) {

@@ -21,6 +21,7 @@ import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { jsonError, jsonOk, withJsonErrors, zodFields } from "@/lib/api/respond";
 import { requireAdminOrNull } from "@/lib/auth/adminApi";
+import { revokeSessions } from "@/lib/auth/revokeSessions";
 import { refuseAdminTarget } from "@/lib/auth/adminTarget";
 import { writeAudit } from "@/lib/audit";
 import {
@@ -242,6 +243,10 @@ export const PATCH = withJsonErrors(async (req: Request, ctx: { params: Promise<
     return jsonError(failure.status, { error: failure.code, code: failure.code });
   }
 
+  // The old number's logins end with the move: someone who still holds that
+  // phone (lost, recycled) would otherwise keep the account.
+  const sessionsRevoked = authSync === "updated" ? await revokeSessions(service, current.auth_user_id, "phone_move") : undefined;
+
   await writeAudit(service, {
     actor_doctor_id: admin.id,
     action: "admin_doctor_profile_edited",
@@ -260,6 +265,7 @@ export const PATCH = withJsonErrors(async (req: Request, ctx: { params: Promise<
             phone_after: maskPhone(nextPhone),
             ...(isSmsDeliverable(nextPhone) ? {} : { phone_not_sms_deliverable: true }),
             auth_sync: authSync,
+            ...(sessionsRevoked === undefined ? {} : { sessions_revoked: sessionsRevoked }),
           }
         : {}),
     },
