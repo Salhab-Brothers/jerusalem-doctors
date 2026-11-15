@@ -17,6 +17,8 @@ let approvedMeanwhile = false;
 let reads = 0;
 /** The conditions the accept update carried. */
 const updateEqs: string[] = [];
+/** The login accounts whose sessions the route asked the database to end. */
+const revokes: string[] = [];
 let readError: unknown = null;
 let updateError: unknown = null;
 /** Whether the log holds a primary licence correction for the doctor. */
@@ -36,6 +38,10 @@ vi.mock("@/lib/cachedReads", () => ({ directoryChanged }));
 
 vi.mock("@/lib/supabase/service", () => ({
   createSupabaseServiceClient: () => ({
+    rpc: async (_name: string, args: { p_user_id: string }) => {
+      revokes.push(args.p_user_id);
+      return { error: null };
+    },
     from: (table: string) => ({
       // The route reads the current licence status before writing, to know
       // whether accepting this doctor needs a reason.
@@ -44,7 +50,7 @@ vi.mock("@/lib/supabase/service", () => ({
           maybeSingle: async () =>
             table === "audit_logs"
               ? { data: corrected ? { id: "a1" } : null, error: auditReadError }
-              : { data: doctorExists ? { license_verification_status: licenseStatus, is_admin_approved: alreadyAccepted || (reads++ > 0 && approvedMeanwhile), is_active: accountOpen, is_admin: targetIsAdmin } : null, error: readError },
+              : { data: doctorExists ? { license_verification_status: licenseStatus, is_admin_approved: alreadyAccepted || (reads++ > 0 && approvedMeanwhile), is_active: accountOpen, is_admin: targetIsAdmin, auth_user_id: "auth-1" } : null, error: readError },
         };
         chain.eq = (col: string, v: unknown) => (table === "audit_logs" && auditAsks.push(`${col}=${String(v)}`), chain);
         chain.limit = () => chain;
@@ -79,6 +85,7 @@ async function call(body: unknown, id = "00000000-0000-4000-8000-0000000000d1") 
 }
 
 beforeEach(() => {
+  revokes.length = 0;
   targetIsAdmin = false;
   acceptLands = true;
   approvedMeanwhile = false;
@@ -118,6 +125,20 @@ describe("PATCH /api/admin/doctors/[id]: featured", () => {
 
   it("rejects an unknown kind", async () => {
     expect((await call({ featured: "vip" })).status).toBe(400);
+  });
+});
+
+describe("PATCH /api/admin/doctors/[id]: suspending ends the account's logins", () => {
+  it("asks the database to end that user's sessions when the account is suspended", async () => {
+    expect((await call({ is_active: false })).status).toBe(200);
+    expect(revokes).toEqual(["auth-1"]);
+  });
+
+  it("leaves the logins alone for every other change, reopening included", async () => {
+    for (const body of [{ featured: null }, { is_visible: false }, { is_active: true }]) {
+      expect((await call(body)).status, JSON.stringify(body)).toBe(200);
+    }
+    expect(revokes).toEqual([]);
   });
 });
 

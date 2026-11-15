@@ -14,6 +14,9 @@ interface Saved {
 const saves: Saved[] = [];
 const audits: Record<string, unknown>[] = [];
 const authCalls: { id: string; attrs: Record<string, unknown> }[] = [];
+/** The login accounts whose sessions the route asked the database to end. */
+const revokes: string[] = [];
+let revokeError: { message: string } | null = null;
 
 let doctor: Record<string, unknown> | null;
 /** Another doctor already holding the number the admin typed. */
@@ -50,9 +53,13 @@ vi.mock("@/lib/supabase/service", () => ({
         return { error: null };
       },
     }),
-    rpc: async (name: string, args: Saved) => {
+    rpc: async (name: string, args: Saved | { p_user_id: string }) => {
+      if (name === "revoke_user_sessions") {
+        revokes.push((args as { p_user_id: string }).p_user_id);
+        return { error: revokeError };
+      }
       expect(name).toBe("save_doctor_profile");
-      saves.push(args);
+      saves.push(args as Saved);
       return { error: rpcError };
     },
     auth: {
@@ -96,6 +103,8 @@ beforeEach(() => {
   saves.length = 0;
   audits.length = 0;
   authCalls.length = 0;
+  revokes.length = 0;
+  revokeError = null;
   requireAdminOrNull.mockClear();
   doctor = { ...BASE };
   phoneHeldBy = null;
@@ -226,6 +235,26 @@ describe("PATCH /api/admin/doctors/[id]/profile: the phone", () => {
     expect(res.status).toBe(409);
     expect((await res.json()).code).toBe("duplicate_phone");
     expect(saves).toHaveLength(0);
+  });
+
+  it("ends the old number's logins once the move has landed", async () => {
+    expect((await call({ phone: NEW })).status).toBe(200);
+    expect(revokes).toEqual(["auth-1"]);
+    expect((audits[0].metadata as Record<string, unknown>).sessions_revoked).toBe(true);
+  });
+
+  it("leaves everyone's logins alone when the number did not change, or the save failed", async () => {
+    await call({ bio: "x" });
+    rpcError = { message: "boom" };
+    await call({ phone: NEW });
+    expect(revokes).toEqual([]);
+  });
+
+  it("still answers 200 when ending the logins fails, and says so in the log", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    revokeError = { message: "boom" };
+    expect((await call({ phone: NEW })).status).toBe(200);
+    expect((audits[0].metadata as Record<string, unknown>).sessions_revoked).toBe(false);
   });
 
   it("puts the login back when the row save fails afterwards", async () => {
