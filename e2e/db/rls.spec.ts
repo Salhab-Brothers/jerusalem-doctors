@@ -116,6 +116,25 @@ test.describe("row-level security", () => {
     expect(audit.error).toBeNull();
   });
 
+  test("a suspended admin's own session loses the activity log and the specialties list", async () => {
+    const ids = seededIds();
+    const db = serviceClient();
+    const admin = await signedIn(ACCOUNTS.admin);
+    // Control: while active, the same session may add a specialty.
+    const before = await admin.from("specialties").insert({ name_ar: "تخصص موقوف", name_ar_normalized: "تخصص موقوف" }).select();
+    expect(before.error).toBeNull();
+    await db.from("specialties").delete().eq("name_ar_normalized", "تخصص موقوف");
+    await db.from("doctors").update({ is_active: false }).eq("id", ids.admin);
+    try {
+      const audit = await admin.from("audit_logs").select("id").limit(1);
+      expect(audit.data ?? []).toEqual([]);
+      const after = await admin.from("specialties").insert({ name_ar: "تخصص موقوف", name_ar_normalized: "تخصص موقوف" }).select();
+      expect(after.error).not.toBeNull();
+    } finally {
+      await db.from("doctors").update({ is_active: true }).eq("id", ids.admin);
+    }
+  });
+
   test("a signed-in doctor cannot change anyone, including themselves", async () => {
     const ids = seededIds();
     const db = serviceClient();
