@@ -3,14 +3,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { jsonRequest } from "@/test/fakeSupabase";
 
-const requireDoctor = vi.hoisted(() => vi.fn());
+const requireAdminOrNull = vi.hoisted(() => vi.fn());
 const rateLimit = vi.hoisted(() => vi.fn());
 const signInWithPassword = vi.hoisted(() => vi.fn());
 const updateUserById = vi.hoisted(() => vi.fn());
 const getUserById = vi.hoisted(() => vi.fn());
 const adminSignOut = vi.hoisted(() => vi.fn());
 const session = vi.hoisted(() => ({ current: null as { access_token: string } | null }));
-vi.mock("@/lib/auth/session", () => ({ requireDoctor }));
+vi.mock("@/lib/auth/adminApi", () => ({ requireAdminOrNull }));
 vi.mock("@/lib/ratelimit", () => ({ rateLimit }));
 vi.mock("@/lib/audit", () => ({ writeAudit: vi.fn() }));
 vi.mock("@supabase/supabase-js", () => ({
@@ -29,7 +29,7 @@ const call = async (body: unknown = { current: "old-password", next: NEXT }) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  requireDoctor.mockResolvedValue({ id: "d1", is_admin: true, auth_user_id: "u1" });
+  requireAdminOrNull.mockResolvedValue({ id: "d1", is_admin: true, auth_user_id: "u1" });
   rateLimit.mockResolvedValue({ success: true });
   getUserById.mockResolvedValue({ data: { user: { email: "a@example.com" } } });
   signInWithPassword.mockResolvedValue({ data: { session: {} }, error: null });
@@ -39,11 +39,18 @@ beforeEach(() => {
 
 describe("POST /api/profile/password", () => {
   it("is for admins only", async () => {
-    requireDoctor.mockResolvedValueOnce({ id: "d2", is_admin: false, auth_user_id: "u2" });
-    expect((await call()).status).toBe(401);
-    requireDoctor.mockRejectedValueOnce(new Error("no session"));
+    // Not an admin, or a password session that has not given its authenticator
+    // code: getCurrentAdmin answers null for both.
+    requireAdminOrNull.mockResolvedValueOnce(null);
     expect((await call()).status).toBe(401);
     expect(updateUserById).not.toHaveBeenCalled();
+    expect(adminSignOut).not.toHaveBeenCalled();
+    expect(signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("is refused to an admin with no sign-in of their own", async () => {
+    requireAdminOrNull.mockResolvedValueOnce({ id: "d3", is_admin: true, auth_user_id: null });
+    expect((await call()).status).toBe(401);
   });
 
   it("wants a new password of at least 16 characters, and a different one", async () => {

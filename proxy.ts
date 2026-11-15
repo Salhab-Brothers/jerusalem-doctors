@@ -5,6 +5,7 @@
 //    own scripts; the root layout stamps it on the theme boot script.
 // 2. Refreshes the Supabase Auth session, with cookies scripts cannot read.
 // 3. Sends a visitor without a session to /login, except on public paths.
+// 4. Refuses a cross-site POST, PUT, PATCH or DELETE to /api/ (lib/security/crossSite.ts).
 //
 // Public paths match exactly, or as a whole subtree ("/login/dev" is under
 // "/login/", but "/loginx" is under nothing). Every page and route also checks
@@ -13,6 +14,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hardenCookie } from "@/lib/security/cookies";
+import { isCrossSiteWrite } from "@/lib/security/crossSite";
 import { buildCsp, newNonce } from "@/lib/security/csp";
 
 const PUBLIC_EXACT = new Set([
@@ -52,6 +54,15 @@ export function isPublic(pathname: string): boolean {
 }
 
 export async function proxy(req: NextRequest) {
+  // First, before anything runs for it: a form on another site must not reach
+  // a route that sets a session or changes a record.
+  if (
+    req.nextUrl.pathname.startsWith("/api/") &&
+    isCrossSiteWrite(req.method, req.headers.get("origin"), req.headers.get("host"), req.headers.get("sec-fetch-site"))
+  ) {
+    return NextResponse.json({ error: "cross_site", code: "cross_site" }, { status: 403 });
+  }
+
   const nonce = newNonce();
   const csp = buildCsp({
     nonce,

@@ -11,6 +11,8 @@ const updates: Record<string, unknown>[] = [];
 const audits: Record<string, unknown>[] = [];
 
 let doctorExists = true;
+let targetIsAdmin = false;
+const superAdmin = vi.hoisted(() => ({ is: false }));
 let readError: { code: string } | null = null;
 let removeError: unknown = null;
 const gate = vi.hoisted(() => ({ allowed: true }));
@@ -21,6 +23,7 @@ const { requireAdminOrNull } = vi.hoisted(() => ({
   })),
 }));
 vi.mock("@/lib/auth/adminApi", () => ({ requireAdminOrNull }));
+vi.mock("@/lib/auth/superAdmin", () => ({ isSuperAdmin: vi.fn(async () => superAdmin.is) }));
 vi.mock("@/lib/ratelimit", () => ({ rateLimit: vi.fn(async () => ({ success: gate.allowed })) }));
 
 vi.mock("@/lib/supabase/service", () => ({
@@ -40,7 +43,7 @@ vi.mock("@/lib/supabase/service", () => ({
     },
     from: (table: string) => ({
       select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: doctorExists ? { id: "00000000-0000-4000-8000-0000000000d1" } : null, error: readError }) }),
+        eq: () => ({ maybeSingle: async () => ({ data: doctorExists ? { id: "00000000-0000-4000-8000-0000000000d1", is_admin: targetIsAdmin } : null, error: readError }) }),
       }),
       update(values: Record<string, unknown>) {
         updates.push(values);
@@ -70,6 +73,8 @@ beforeEach(() => {
   audits.length = 0;
   requireAdminOrNull.mockClear();
   doctorExists = true;
+  targetIsAdmin = false;
+  superAdmin.is = false;
   readError = null;
   removeError = null;
   gate.allowed = true;
@@ -112,6 +117,31 @@ describe("POST /api/admin/doctors/[id]/photo", () => {
       ctx,
     );
     expect(res.status).toBe(415);
+  });
+});
+
+describe("another admin's photo", () => {
+  it("is not replaced or removed by an admin who is not a super admin", async () => {
+    targetIsAdmin = true;
+    const { POST, DELETE } = await import("./route");
+    const up = await POST(post(), ctx);
+    expect(up.status).toBe(403);
+    expect(await up.json()).toMatchObject({ code: "admin_protected" });
+    expect((await DELETE(new Request("https://example.test/x", { method: "DELETE" }), ctx)).status).toBe(403);
+    expect(uploadSpy).not.toHaveBeenCalled();
+    expect(removeSpy).not.toHaveBeenCalled();
+    expect(updates).toEqual([]);
+    expect(audits).toEqual([]);
+  });
+
+  it("is changed by a super admin, and an admin's own is theirs to change", async () => {
+    targetIsAdmin = true;
+    superAdmin.is = true;
+    const { POST } = await import("./route");
+    expect((await POST(post(), ctx)).status).toBe(200);
+    superAdmin.is = false;
+    requireAdminOrNull.mockResolvedValueOnce({ id: "00000000-0000-4000-8000-0000000000d1" });
+    expect((await POST(post(), ctx)).status).toBe(200);
   });
 });
 
