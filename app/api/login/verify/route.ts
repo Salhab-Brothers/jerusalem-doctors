@@ -113,8 +113,11 @@ export const POST = withJsonErrors(async (req: Request) => {
 
   // An admin signs in by password (lib/auth/mfa.ts). verifyOtp has already set
   // the session cookies: a refused sign-in must not leave that session behind.
+  // Local scope: the default signs out every session of the user, and an
+  // admin's phone and password sign-in are one account (scripts/add-dev-login.ts),
+  // so this would end their real sessions on every device too.
   if (doctor.data.is_admin) {
-    await ssr.auth.signOut();
+    await ssr.auth.signOut({ scope: "local" });
     return jsonError(403, { error: "admin_password_only", code: "admin_password_only" });
   }
 

@@ -52,7 +52,8 @@ describe("POST /api/login/verify", () => {
     const res = await call(GOOD);
     expect(res.status).toBe(403);
     expect(await res.json()).toMatchObject({ code: "admin_password_only" });
-    expect(auth.signOut).toHaveBeenCalledOnce();
+    // Only this new session, never the admin's real ones on other devices.
+    expect(auth.signOut).toHaveBeenCalledExactlyOnceWith({ scope: "local" });
     expect(db.argsOf("doctors", "update")).toHaveLength(0);
   });
 

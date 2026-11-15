@@ -252,7 +252,7 @@ describe("POST /api/signup/verify: a phone that already has an account", () => {
     const res = await call(BODY);
     expect(res.status).toBe(403);
     expect(await res.json()).toMatchObject({ code: "admin_password_only" });
-    expect(auth.signOut).toHaveBeenCalled();
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: "local" });
     expect(db.argsOf("doctors", "update")).toHaveLength(0);
   });
 

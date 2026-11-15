@@ -170,9 +170,11 @@ export const POST = withJsonErrors(async (req: Request) => {
   const stored = pending.data.payload as unknown as PendingPayload | ExistingAccountPayload;
   if ("existing_doctor_id" in stored) {
     const res = await signInExisting(service, pending.data.id, stored, userId);
-    // verifyOtp already set the session cookies. A refused sign-in (inactive
-    // or vanished account) must not leave that session behind.
-    if (!res.ok) await ssr.auth.signOut();
+    // verifyOtp already set the session cookies. A refused sign-in (inactive,
+    // vanished or admin account) must not leave that session behind. Local
+    // scope: the default would end every session of that user, an admin's
+    // real ones included.
+    if (!res.ok) await ssr.auth.signOut({ scope: "local" });
     return res;
   }
   const payload = stored;
