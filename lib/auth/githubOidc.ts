@@ -6,11 +6,13 @@
 //
 // Who can obtain a token that passes: the smoke workflow file as it stands on
 // main, on GitHub's own runners. A branch's copy never passes: anyone with
-// write access can push a branch, and a preview deploy of it fires
-// deployment_status, which runs that branch's workflow file. Changing main
-// goes through review. Pull requests from forks get no id-token permission.
-// Vercel records each deployment's ref as a commit SHA, so a deployment_status
-// run names the workflow as smoke.yml@<sha>: that SHA must be on main.
+// write access can push a branch. Changing main goes through review. Pull
+// requests from forks get no id-token permission.
+// The workflow runs on a push to main, so it names itself smoke.yml@refs/heads/main.
+// It used to run on deployment_status, which Vercel fires for previews too and
+// which runs the deployed commit's file (smoke.yml@<sha>); that event is no
+// longer a trigger, but a token from it is still accepted only when that SHA
+// is on main.
 // https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect
 
 import { createPublicKey, verify, type JsonWebKey } from "node:crypto";
@@ -21,7 +23,7 @@ export const CI_AUDIENCE = "jerusalem-doctors-smoke";
 export const REPOSITORY = "Salhab-Brothers/jerusalem-doctors";
 const SMOKE_WORKFLOW = `${REPOSITORY}/.github/workflows/smoke.yml@`;
 /** The smoke workflow's own triggers (.github/workflows/smoke.yml). */
-const EVENTS = new Set(["deployment_status", "schedule", "workflow_dispatch"]);
+const EVENTS = new Set(["push", "deployment_status", "schedule", "workflow_dispatch"]);
 /** GitHub issues them for a few minutes; older than this is a replay. */
 const MAX_AGE_SECONDS = 10 * 60;
 

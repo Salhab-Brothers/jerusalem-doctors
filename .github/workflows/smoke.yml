@@ -1,16 +1,23 @@
 name: Production smoke
 
-# Read-only checks against the live site: after every production deploy,
-# every six hours, and on demand. Signs in as the CI account with a token
+# Read-only checks against the live site: after every push to main (once its
+# production deploy is ready), every six hours, and on demand. Signs in as the CI account with a token
 # GitHub issues to this workflow (id-token: write, /api/login/ci): there is
 # no password. Its requests carry this run's URL (x-ci-run), so the activity
 # log shows "اختبار آلي (CI)" and its searches are not counted in the stats.
 # A failure here means the live site needs a look.
 #
 # Needs CI_LOGIN_EMAIL on Vercel (scripts/add-ci-account.ts). No secrets.
+#
+# Never triggered by deployment_status. That event runs the workflow file of
+# the deployed commit, and Vercel creates a deployment for every preview, so a
+# branch's own copy of this file (its `if`, its `permissions`, its steps) would
+# run with this repository's token. A push to main runs main's file only, and
+# changing main goes through review.
 
 on:
-  deployment_status:
+  push:
+    branches: [main]
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
@@ -21,25 +28,45 @@ concurrency:
 
 jobs:
   smoke:
-    # Deploy events fire for previews and for every state; only a finished
-    # production deploy is worth checking.
-    if: >-
-      github.event_name != 'deployment_status' ||
-      (github.event.deployment_status.state == 'success' &&
-       github.event.deployment.environment == 'Production')
     # id-token: GitHub's short-lived token for the sign-in (/api/login/ci).
+    # deployments: read, to see when this commit's production deploy is ready.
     permissions:
       contents: read
+      deployments: read
       id-token: write
       issues: write
     # Pinned to the current LTS on purpose: a moving label (ubuntu-latest)
     # can change the browser system libraries without a commit.
     runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      # Vercel deploys each push to main on its own; the checks are for the
+      # deploy of this very commit, so wait for it (up to 20 minutes).
+      - name: Wait for this commit's production deploy
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          for _ in $(seq 1 60); do
+            id=$(gh api "repos/$GITHUB_REPOSITORY/deployments?sha=$SHA&environment=Production" --jq '.[0].id // empty')
+            if [ -n "$id" ]; then
+              state=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" --jq '.[0].state // empty')
+              echo "production deploy $id: ${state:-no status yet}"
+              case "$state" in
+                success) exit 0 ;;
+                failure|error) echo "The production deploy of $SHA did not succeed."; exit 1 ;;
+              esac
+            else
+              echo "no production deploy of $SHA yet"
+            fi
+            sleep 20
+          done
+          echo "No finished production deploy of $SHA within 20 minutes."
+          exit 1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22

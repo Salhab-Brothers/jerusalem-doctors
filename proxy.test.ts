@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { isPublic } from "./proxy";
+import { NextRequest } from "next/server";
+import { isPublic, proxy } from "./proxy";
 
 describe("isPublic", () => {
   it.each([
@@ -50,4 +51,21 @@ describe("isPublic", () => {
     "%s needs a session",
     (p) => expect(isPublic(p)).toBe(false),
   );
+});
+
+describe("proxy: cross-site writes to the API", () => {
+  const post = (path: string, headers: Record<string, string>, method = "POST") =>
+    proxy(new NextRequest(`https://x.test${path}`, { method, headers: { host: "x.test", ...headers } }));
+
+  it("answers 403 before anything else runs", async () => {
+    for (const [path, headers] of [
+      ["/api/login/verify", { origin: "https://evil.example" }],
+      ["/api/profile", { origin: "null" }],
+      ["/api/admin/doctors/x", { "sec-fetch-site": "cross-site" }],
+    ] as const) {
+      const res = await post(path, { ...headers });
+      expect(res.status, path).toBe(403);
+      expect(await res.json()).toEqual({ error: "cross_site", code: "cross_site" });
+    }
+  });
 });

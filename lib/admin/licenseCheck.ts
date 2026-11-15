@@ -204,11 +204,12 @@ export interface AdminDoctorLicenseRow {
   secondary_license_number: string | null;
   secondary_license_region: "IL" | "PS" | null;
   secondary_license_verification_status: string | null;
+  is_admin: boolean | null;
 }
 
 // One literal, not joined pieces: the typed client reads the row's shape from it.
 export const LICENSE_ROW_COLUMNS =
-  "id, hebrew_first_name, hebrew_family_name, license_number, license_region, license_verification_status, secondary_license_number, secondary_license_region, secondary_license_verification_status";
+  "id, hebrew_first_name, hebrew_family_name, license_number, license_region, license_verification_status, secondary_license_number, secondary_license_region, secondary_license_verification_status, is_admin";
 
 /** What one slot currently holds. */
 export function storedSlot(doctor: AdminDoctorLicenseRow, slot: LicenseSlot) {

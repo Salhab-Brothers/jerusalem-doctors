@@ -19,6 +19,7 @@ let registryDown = false;
 const gate = vi.hoisted(() => ({ admin: true, allowed: true }));
 
 vi.mock("@/lib/auth/adminApi", () => ({ requireAdminOrNull: vi.fn(async () => (gate.admin ? { id: "00000000-0000-4000-8000-00000000a001" } : null)) }));
+vi.mock("@/lib/auth/superAdmin", () => ({ isSuperAdmin: vi.fn(async () => false) }));
 vi.mock("@/lib/ratelimit", () => ({ rateLimit: vi.fn(async () => ({ success: gate.allowed })) }));
 vi.mock("@/lib/moh/client", () => ({
   MohClient: class {
@@ -124,6 +125,17 @@ beforeEach(() => {
 });
 
 describe("POST .../license/save", () => {
+it("leaves another admin's licence to a super admin", async () => {
+    doctor = { ...DOCTOR, is_admin: true };
+    mirrorRows = [MIRROR];
+    const res = await call({ slot: "primary", license_number: "189371", expected_status: "verified" });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ code: "admin_protected" });
+    expect(updates).toEqual([]);
+    expect(audits).toEqual([]);
+  });
+
+
   it("stores a corrected number with the status the registry gives", async () => {
     mirrorRows = [MIRROR];
     const res = await call({ slot: "primary", license_number: "189371", expected_status: "verified" });
