@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import { ipFromHeaders, jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
+import { raiseAlert } from "@/lib/alerts";
 import { linkAuthUser } from "@/lib/auth/link";
 import { InvalidPhoneError, normalizePhone } from "@/lib/normalize/phone";
 import { rateLimit } from "@/lib/ratelimit";
@@ -118,6 +119,9 @@ export const POST = withJsonErrors(async (req: Request) => {
   // so this would end their real sessions on every device too.
   if (doctor.data.is_admin) {
     await ssr.auth.signOut({ scope: "local" });
+    // No code is ever sent to an admin's number (lib/otp/recipients.ts), so a
+    // valid one means someone guessed it or reached the phone: tell the admins.
+    await raiseAlert(service, "admin_phone_code_passed", { extra: { route: "login/verify" }, logOnly: { doctor_id: doctor.data.id } });
     return jsonError(403, { error: "admin_password_only", code: "admin_password_only" });
   }
 

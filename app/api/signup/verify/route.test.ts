@@ -253,6 +253,8 @@ describe("POST /api/signup/verify: a phone that already has an account", () => {
     expect(res.status).toBe(403);
     expect(await res.json()).toMatchObject({ code: "admin_password_only" });
     expect(auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+    // The audit log gets the alert: a valid code for an admin's number.
+    expect(db.argsOf("audit_logs", "insert")).toEqual(expect.arrayContaining([[expect.objectContaining({ action: "alert", metadata: expect.objectContaining({ alert: "admin_phone_code_passed", doctor_id: "d1" }) })]]));
     expect(db.argsOf("doctors", "update")).toHaveLength(0);
   });
 

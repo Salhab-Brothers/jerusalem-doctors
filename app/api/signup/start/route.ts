@@ -265,11 +265,12 @@ export const POST = withJsonErrors(async (req: Request) => {
   // make "registered" observable through any body a new signup would fail.
   const phoneOwner = await service
     .from("doctors")
-    .select("id")
+    .select("id, is_admin")
     .eq("phone_e164", phoneE164)
     .maybeSingle();
   if (phoneOwner.error && phoneOwner.error.code !== "PGRST116") throw phoneOwner.error;
   const ownerId: string | null = phoneOwner.data?.id ?? null;
+  const ownerIsAdmin = phoneOwner.data?.is_admin === true;
 
   // Licence uniqueness. License numbers are only unique within their own
   // issuing region, and a license number can't be reused across doctors
@@ -347,6 +348,10 @@ export const POST = withJsonErrors(async (req: Request) => {
       phoneE164,
       { phone_e164: phoneE164, existing_doctor_id: ownerId },
       verified.status,
+      // The hook never delivers a code to an admin's number (lib/otp/recipients.ts),
+      // so that send is refused; the answer must still be the one every other
+      // number gets, or this form would say which numbers are admins'.
+      ownerIsAdmin,
     );
   }
 
@@ -443,6 +448,8 @@ async function startPendingSignup(
   phoneE164: string,
   payload: Record<string, unknown>,
   licenseStatus: string,
+  /** A refused send is expected and kept quiet: an admin's number. */
+  sendRefusedIsExpected = false,
 ) {
   const now = Date.now();
   const expiresAt = new Date(now + PENDING_TTL_MS).toISOString();
@@ -468,7 +475,9 @@ async function startPendingSignup(
     phone: phoneE164,
     options: { channel: "sms" },
   });
-  if (otpErr) {
+  if (otpErr && sendRefusedIsExpected) {
+    console.warn("[signup/start] no code sent to an admin's number, as intended");
+  } else if (otpErr) {
     // Roll back the pending row so we don't leak an unusable session id.
     await service.from("pending_signups").delete().eq("id", insert.data.id);
     console.error("[signup/start] signInWithOtp failed", otpErr);

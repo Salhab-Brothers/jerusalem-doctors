@@ -336,6 +336,7 @@ async function signInExisting(
   }
   // An admin signs in by password, not by phone code (lib/auth/mfa.ts).
   if (doctor.data.is_admin) {
+    await raiseAlert(service, "admin_phone_code_passed", { extra: { route: "signup/verify" }, logOnly: { doctor_id: doctor.data.id } });
     return jsonError(403, { error: "admin_password_only", code: "admin_password_only" });
   }
   if (!(await linkAuthUser(service, doctor.data, userId))) {

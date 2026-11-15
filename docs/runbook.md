@@ -795,7 +795,12 @@ non-admin. No code is sent to an admin's number at `/login`, and an admin who
 gets one through the signup form is refused with a message to use the team
 sign-in. The only exception is the smoke check's own sign-in (`/api/login/ci`),
 the CI account, matched by `CI_LOGIN_EMAIL`. A doctor-admin therefore signs in
-at `/login/dev` for everything. (A SIM swap on an admin's number used to be a
+at `/login/dev` for everything. The Send SMS hook also refuses an admin's
+number (`lib/otp/recipients.ts`), so a code requested straight from Supabase's
+endpoint is never delivered either. If a **valid** code is ever entered for an
+admin's number, it is refused and the admins get the alert «أُدخل رمز هاتف صحيح
+لرقم مشرف»: the code was guessed or the phone was reached, so ask that admin
+and change their password. (A SIM swap on an admin's number used to be a
 full admin session with no second factor.)
 
 **If an admin is locked out** (they are not on `DEV_LOGIN_EMAILS`, or have no
