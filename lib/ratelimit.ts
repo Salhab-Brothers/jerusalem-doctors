@@ -14,7 +14,17 @@ import { SMS_DAILY_CAP } from "@/lib/limits";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 type WindowSpec = `${number} ${"s" | "m" | "h" | "d"}`;
-type LimitDef = { limit: number; window: WindowSpec };
+type LimitDef = {
+  limit: number;
+  window: WindowSpec;
+  /** Give up on Redis after this long and let the request through. For a limiter
+   *  that runs where the caller's own time is short (the Send SMS hook). */
+  timeoutMs?: number;
+};
+
+/** Where a limiter has a timeoutMs, its Redis client also makes no retries and
+ *  abandons a request a little after it, so a slow Redis cannot hold the call. */
+const FAST_REDIS_ABORT_MS = 2_500;
 
 // Per-phone / per-session limits are the real brake on OTP guessing and SMS
 // spend. The per-IP ones only stop a single machine flooding: a hospital or
@@ -69,7 +79,9 @@ export const RATE_LIMITS = {
   // normal day is about 10 codes, the busiest so far about 40 (2026-10).
   // Raise SMS_DAILY_CAP in Vercel before a big announcement: at the cap,
   // nobody can sign up or log in until the window frees up.
-  smsDaily: { limit: SMS_DAILY_CAP, window: "1 d" },
+  // Runs inside Supabase's Send SMS hook, which has about 5 seconds in all: a
+  // slow Redis must not use them up and stop every sign-in code.
+  smsDaily: { limit: SMS_DAILY_CAP, window: "1 d", timeoutMs: 1_500 },
   devLogin: { limit: 5, window: "15 m" },
   devLoginIp: { limit: 10, window: "15 m" },
   // A GitHub token for the smoke check's sign-in, accepted once
@@ -95,13 +107,18 @@ export interface RateLimitResult {
   reset: number; // unix ms when budget resets
 }
 
-const redisFromEnv = (): Redis | null => {
+const redisFromEnv = (fast = false): Redis | null => {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
   // 1.40 changed the default to plain JSON; the old wire format stays until
   // the limiter has been seen working against the new one in production.
-  return new Redis({ url, token, responseEncoding: "base64" });
+  return new Redis({
+    url,
+    token,
+    responseEncoding: "base64",
+    ...(fast ? { retry: false as const, signal: () => AbortSignal.timeout(FAST_REDIS_ABORT_MS) } : {}),
+  });
 };
 
 const upstashLimiters = new Map<RateLimitKey, Ratelimit>();
@@ -112,12 +129,13 @@ const localCounters = new Map<string, { count: number; resetAt: number }>();
 function getUpstashLimiter(key: RateLimitKey, redis: Redis): Ratelimit {
   let limiter = upstashLimiters.get(key);
   if (limiter) return limiter;
-  const def = RATE_LIMITS[key];
+  const def: LimitDef = RATE_LIMITS[key];
   limiter = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(def.limit, def.window),
     prefix: `rl:${key}`,
     analytics: false,
+    timeout: def.timeoutMs,
   });
   upstashLimiters.set(key, limiter);
   return limiter;
@@ -169,7 +187,7 @@ export async function rateLimit(
     return { success: true, limit: Infinity, remaining: Infinity, reset: 0 };
   }
 
-  const redis = redisFromEnv();
+  const redis = redisFromEnv(Boolean((RATE_LIMITS[key] as LimitDef).timeoutMs));
   if (!redis) {
     if (process.env.NODE_ENV === "production") {
       throw new Error(

@@ -3,8 +3,16 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const redis = vi.hoisted(() => ({ exists: vi.fn(), set: vi.fn() }));
-vi.mock("@upstash/redis", () => ({ Redis: class { exists = redis.exists; set = redis.set; } }));
+const redis = vi.hoisted(() => ({ exists: vi.fn(), set: vi.fn(), ctor: vi.fn() }));
+vi.mock("@upstash/redis", () => ({
+  Redis: class {
+    exists = redis.exists;
+    set = redis.set;
+    constructor(opts: unknown) {
+      redis.ctor(opts);
+    }
+  },
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -13,6 +21,15 @@ beforeEach(() => {
 });
 
 describe("with Redis", () => {
+  it("uses a Redis that makes no retries and abandons a slow call: the hook has about 5 seconds in all", async () => {
+    const { alreadySent } = await import("./sentOnce");
+    redis.exists.mockResolvedValue(0);
+    await alreadySent("k");
+    const opts = redis.ctor.mock.calls[0][0];
+    expect(opts.retry).toBe(false);
+    expect(opts.signal()).toBeInstanceOf(AbortSignal);
+  });
+
   it("asks Redis whether a code's text already went out, and records it with a lifetime", async () => {
     const { alreadySent, markSent } = await import("./sentOnce");
     redis.exists.mockResolvedValueOnce(1).mockResolvedValueOnce(0);

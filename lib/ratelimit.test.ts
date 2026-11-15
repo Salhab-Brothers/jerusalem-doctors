@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const limit = vi.hoisted(() => vi.fn());
 const ctor = vi.hoisted(() => vi.fn());
 
-vi.mock("@upstash/redis", () => ({ Redis: vi.fn() }));
+const Redis = vi.hoisted(() => vi.fn());
+vi.mock("@upstash/redis", () => ({ Redis }));
 const { captureMessage, raiseAlert } = vi.hoisted(() => ({ captureMessage: vi.fn(), raiseAlert: vi.fn() }));
 vi.mock("@sentry/nextjs", () => ({ captureMessage }));
 vi.mock("@/lib/supabase/service", () => ({ createSupabaseServiceClient: () => ({}) }));
@@ -89,6 +90,27 @@ describe("rateLimit", () => {
     await rateLimit("search", "e");
     expect(ctor).toHaveBeenCalledTimes(1);
     expect(ctor).toHaveBeenCalledWith(expect.objectContaining({ prefix: "rl:search", limiter: "30/1 m" }));
+  });
+
+  it("gives the Send SMS hook's daily budget a short Redis: no retries, a timeout, an abort shortly after", async () => {
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://redis.test");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "tok");
+    limit.mockResolvedValue({ success: true, limit: 200, remaining: 199, reset: 5 });
+    const rateLimit = await load();
+
+    await rateLimit("smsDaily", "all");
+    expect(ctor).toHaveBeenCalledWith(expect.objectContaining({ prefix: "rl:smsDaily", timeout: 1_500 }));
+    const fast = Redis.mock.calls[0][0];
+    expect(fast.retry).toBe(false);
+    expect(typeof fast.signal).toBe("function");
+    expect(fast.signal()).toBeInstanceOf(AbortSignal);
+
+    // Every other limiter keeps the library's defaults.
+    await rateLimit("search", "d");
+    expect(ctor).toHaveBeenLastCalledWith(expect.objectContaining({ prefix: "rl:search", timeout: undefined }));
+    const normal = Redis.mock.calls[1][0];
+    expect(normal).not.toHaveProperty("retry");
+    expect(normal).not.toHaveProperty("signal");
   });
 
   it("lets a request through when Redis is slow, alerting admins at most once an hour", async () => {
