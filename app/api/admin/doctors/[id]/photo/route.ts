@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
 import { requireAdminOrNull } from "@/lib/auth/adminApi";
+import { refuseAdminTarget } from "@/lib/auth/adminTarget";
 import { writeAudit } from "@/lib/audit";
 import { removeDoctorPhoto, uploadDoctorPhoto } from "@/lib/profile/photoUpload";
 import { rateLimit } from "@/lib/ratelimit";
@@ -18,10 +19,10 @@ type Ctx = { params: Promise<{ id: string }> };
 /** A malformed id would fail the read with 22P02; it is simply not found. */
 const badId = (id: string) => !z.guid().safeParse(id).success;
 
-async function doctorExists(service: ReturnType<typeof createSupabaseServiceClient>, id: string) {
-  const found = await service.from("doctors").select("id").eq("id", id).maybeSingle();
+async function findTarget(service: ReturnType<typeof createSupabaseServiceClient>, id: string) {
+  const found = await service.from("doctors").select("id, is_admin").eq("id", id).maybeSingle();
   if (found.error && found.error.code !== "PGRST116") throw found.error;
-  return Boolean(found.data);
+  return found.data;
 }
 
 export const POST = withJsonErrors(async (req: Request, ctx: Ctx) => {
@@ -41,9 +42,10 @@ export const POST = withJsonErrors(async (req: Request, ctx: Ctx) => {
   }
 
   const service = createSupabaseServiceClient();
-  if (!(await doctorExists(service, id))) {
-    return jsonError(404, { error: "not_found", code: "not_found" });
-  }
+  const target = await findTarget(service, id);
+  if (!target) return jsonError(404, { error: "not_found", code: "not_found" });
+  const protectedTarget = await refuseAdminTarget(service, admin, target);
+  if (protectedTarget) return protectedTarget;
 
   const result = await uploadDoctorPhoto(service, id, file, "admin.photo");
   if ("error" in result) {
@@ -68,9 +70,10 @@ export const DELETE = withJsonErrors(async (_req: Request, ctx: Ctx) => {
   if (badId(id)) return jsonError(404, { error: "not_found", code: "not_found" });
 
   const service = createSupabaseServiceClient();
-  if (!(await doctorExists(service, id))) {
-    return jsonError(404, { error: "not_found", code: "not_found" });
-  }
+  const target = await findTarget(service, id);
+  if (!target) return jsonError(404, { error: "not_found", code: "not_found" });
+  const protectedTarget = await refuseAdminTarget(service, admin, target);
+  if (protectedTarget) return protectedTarget;
 
   const failure = await removeDoctorPhoto(service, id, "admin.photo");
   if (failure) return jsonError(failure.status, { error: failure.code, code: failure.code });

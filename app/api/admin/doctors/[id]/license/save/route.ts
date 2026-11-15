@@ -10,6 +10,7 @@
 import { z } from "zod";
 import { jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
 import { requireAdminOrNull } from "@/lib/auth/adminApi";
+import { refuseAdminTarget } from "@/lib/auth/adminTarget";
 import { writeAudit } from "@/lib/audit";
 import {
   adoptableName,
@@ -72,6 +73,8 @@ export const POST = withJsonErrors(async (req: Request, ctx: { params: Promise<{
   }
   if (!found.data) return jsonError(404, { error: "not_found", code: "not_found" });
   const doctor = found.data as AdminDoctorLicenseRow;
+  const protectedTarget = await refuseAdminTarget(service, admin, doctor);
+  if (protectedTarget) return protectedTarget;
 
   const stored = storedSlot(doctor, body.slot);
   const region = body.region ?? (stored.region as "IL" | "PS" | null) ?? doctor.license_region;

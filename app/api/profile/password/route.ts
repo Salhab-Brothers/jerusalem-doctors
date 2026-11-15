@@ -12,8 +12,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
+import { requireAdminOrNull } from "@/lib/auth/adminApi";
 import { writeAudit } from "@/lib/audit";
-import { requireDoctor } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/ratelimit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -42,8 +42,10 @@ async function passwordMatches(email: string, password: string): Promise<boolean
 }
 
 export const POST = withJsonErrors(async (req: Request) => {
-  const me = await requireDoctor().catch(() => null);
-  if (!me?.is_admin || !me.auth_user_id) return jsonError(401, { error: "unauthenticated", code: "unauthenticated" });
+  // getCurrentAdmin, not requireDoctor: a password session that has not given
+  // its authenticator code is not an admin yet, and may not change the password.
+  const me = await requireAdminOrNull();
+  if (!me?.auth_user_id) return jsonError(401, { error: "unauthenticated", code: "unauthenticated" });
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError(400, { error: "invalid_body", code: "invalid_body" });
