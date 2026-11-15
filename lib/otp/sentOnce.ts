@@ -24,7 +24,12 @@ const local = new Map<string, number>();
 function redis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? new Redis({ url, token, responseEncoding: "base64" }) : null;
+  // No retries and a short abort: this runs inside Supabase's Send SMS hook,
+  // which has about 5 seconds in all. A slow Redis then reads as "not sent yet",
+  // which is the safe answer (a retry may send twice; nothing worse).
+  return url && token
+    ? new Redis({ url, token, responseEncoding: "base64", retry: false, signal: () => AbortSignal.timeout(1_500) })
+    : null;
 }
 
 /** The pair's key; `secret` is SEND_SMS_HOOK_SECRET (unset only in dev). */
