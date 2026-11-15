@@ -892,8 +892,8 @@ skipped it (for example by going straight to the URL) while the flag is off.
 
 ## The production smoke check's sign-in (no password)
 
-`.github/workflows/smoke.yml` checks the live site after every deploy and every
-six hours, signed in as an admin. It signs in as a dedicated **CI account**,
+`.github/workflows/smoke.yml` checks the live site after every push to `main`
+(it waits for that commit's production deploy) and every six hours, signed in as an admin. It signs in as a dedicated **CI account**,
 with a token GitHub issues to that workflow (OpenID Connect), checked by
 `POST /api/login/ci` (`lib/auth/githubOidc.ts`): GitHub's signature, this
 repository, `smoke.yml`, GitHub's own runners, fresh, and each token once.
@@ -906,6 +906,12 @@ repository, `smoke.yml`, GitHub's own runners, fresh, and each token once.
 - **The trust boundary** is write access to this repository: only a workflow
   file named `smoke.yml` here can get a token that passes, which is the same
   boundary a GitHub secret had. Pull requests from forks get no token.
+- **Why not `deployment_status`.** That event runs the workflow file of the
+  deployed commit, and Vercel creates deployments for previews, so a branch's
+  own copy of `smoke.yml` (and its `permissions`) would run with the
+  repository's token. A push to `main` runs only main's file. Also worth
+  setting: Vercel, Settings, Git, Git Fork Protection on, and GitHub, Settings,
+  Actions, General, workflow permissions read-only by default.
 
 Setting it up, once per Supabase project:
 

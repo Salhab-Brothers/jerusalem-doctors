@@ -47,6 +47,14 @@ describe("verifySmokeToken", () => {
     expect(await check(token({ ...CLAIMS, ...at(SHA) }))).not.toBeNull();
   });
 
+  it("accepts the workflow run by a push to main, and nothing else about a push", async () => {
+    expect(await check(token({ ...CLAIMS, ...at("refs/heads/main", "push") }))).not.toBeNull();
+    // A push to another branch runs that branch's file.
+    expect(await check(token({ ...CLAIMS, ...at("refs/heads/evil", "push") }))).toBeNull();
+    // A push names a branch, never a bare commit.
+    expect(await check(token({ ...CLAIMS, ...at(SHA, "push") }))).toBeNull();
+  });
+
   it("refuses a commit that is not on main, and a sha on any other event", async () => {
     expect(await check(token({ ...CLAIMS, ...at("b".repeat(40)) }))).toBeNull();
     expect(await check(token({ ...CLAIMS, ...at(SHA, "workflow_dispatch") }))).toBeNull();
