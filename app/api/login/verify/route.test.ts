@@ -47,6 +47,15 @@ describe("POST /api/login/verify", () => {
     expect(db.argsOf("doctors", "update")).toHaveLength(0);
   });
 
+  it("refuses an admin's phone code: no session is left behind and nothing is linked", async () => {
+    db.queue("doctors", { data: { id: "d1", is_active: true, is_admin_approved: true, auth_user_id: null, is_admin: true } });
+    const res = await call(GOOD);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ code: "admin_password_only" });
+    expect(auth.signOut).toHaveBeenCalledOnce();
+    expect(db.argsOf("doctors", "update")).toHaveLength(0);
+  });
+
   it("links auth_user_id when it differs", async () => {
     db.queue("doctors", { data: { id: "d1", is_active: true, is_admin_approved: false, auth_user_id: null } }, {});
     const res = await call(GOOD);

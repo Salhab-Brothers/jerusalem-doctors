@@ -59,6 +59,7 @@ describe("POST /api/login/resend", () => {
     null,
     { id: "d1", is_active: false, is_phone_verified: true },
     { id: "d1", is_active: true, is_phone_verified: false },
+    { id: "d1", is_active: true, is_phone_verified: true, is_admin: true },
   ])("answers 200 without sending for %o", async (data) => {
     db.queue("doctors", { data });
     const res = await call({ phone: "0501234567" });

@@ -322,7 +322,7 @@ async function signInExisting(
 
   const doctor = await service
     .from("doctors")
-    .select("id, is_active, is_admin_approved, auth_user_id")
+    .select("id, is_active, is_admin_approved, auth_user_id, is_admin")
     .eq("id", payload.existing_doctor_id)
     .maybeSingle();
   if (doctor.error && doctor.error.code !== "PGRST116") throw doctor.error;
@@ -331,6 +331,10 @@ async function signInExisting(
   }
   if (!doctor.data.is_active) {
     return jsonError(403, { error: "account_inactive", code: "account_inactive" });
+  }
+  // An admin signs in by password, not by phone code (lib/auth/mfa.ts).
+  if (doctor.data.is_admin) {
+    return jsonError(403, { error: "admin_password_only", code: "admin_password_only" });
   }
   if (!(await linkAuthUser(service, doctor.data, userId))) {
     return jsonError(500, { error: "link_failed", code: "link_failed" });

@@ -124,6 +124,14 @@ describe("POST /api/login/start", () => {
     expect(auth.signInWithOtp).not.toHaveBeenCalled();
   });
 
+  it("sends an admin no code and answers as for a number with no account", async () => {
+    db.queue("doctors", { data: { id: "d1", is_active: true, is_phone_verified: true, is_admin: true } });
+    const res = await call({ phone: "0501234567" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(SENT);
+    expect(auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
   it("returns a JSON 500 on a DB error", async () => {
     db.queue("doctors", { error: { code: "XX000", message: "boom" } });
     const res = await call({ phone: "0501234567" });

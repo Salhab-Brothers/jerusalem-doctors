@@ -246,6 +246,16 @@ describe("POST /api/signup/verify: a phone that already has an account", () => {
     expect(db.argsOf("pending_signups", "delete")).toHaveLength(1);
   });
 
+  it("refuses an admin's account: they sign in by password, and no session is left", async () => {
+    db.queue("pending_signups", EXISTING, CLAIMED);
+    db.queue("doctors", { data: { id: "d1", is_active: true, is_admin_approved: true, auth_user_id: null, is_admin: true } });
+    const res = await call(BODY);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ code: "admin_password_only" });
+    expect(auth.signOut).toHaveBeenCalled();
+    expect(db.argsOf("doctors", "update")).toHaveLength(0);
+  });
+
   it("checks the OTP first", async () => {
     db.queue("pending_signups", EXISTING, CLAIMED);
     auth.verifyOtp.mockResolvedValue({ data: { user: null }, error: { message: "bad" } });

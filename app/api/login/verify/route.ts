@@ -103,12 +103,19 @@ export const POST = withJsonErrors(async (req: Request) => {
   // linkAuthUser).
   const doctor = await service
     .from("doctors")
-    .select("id, is_active, is_admin_approved, auth_user_id")
+    .select("id, is_active, is_admin_approved, auth_user_id, is_admin")
     .eq("phone_e164", phoneE164)
     .maybeSingle();
 
   if (!doctor.data) {
     return jsonError(404, { error: "not_found", code: "not_found" });
+  }
+
+  // An admin signs in by password (lib/auth/mfa.ts). verifyOtp has already set
+  // the session cookies: a refused sign-in must not leave that session behind.
+  if (doctor.data.is_admin) {
+    await ssr.auth.signOut();
+    return jsonError(403, { error: "admin_password_only", code: "admin_password_only" });
   }
 
   if (!(await linkAuthUser(service, doctor.data, userId))) {

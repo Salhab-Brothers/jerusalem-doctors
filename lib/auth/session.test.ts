@@ -24,6 +24,9 @@ vi.mock("@/lib/supabase/server", async () => {
 const session = () => import("./session");
 const signedIn = (id = "u1") =>
   auth.getClaims.mockResolvedValue({ data: { claims: { sub: id } }, error: null });
+/** A session that began with a password, which is how an admin signs in. */
+const signedInByPassword = (id = "u1") =>
+  auth.getClaims.mockResolvedValue({ data: { claims: { sub: id, aal: "aal1", amr: [{ method: "password" }] } }, error: null });
 
 describe("lib/auth/session", () => {
   beforeEach(() => {
@@ -58,11 +61,27 @@ describe("lib/auth/session", () => {
       expect(await (await session()).getCurrentAdmin()).toEqual(admin);
     });
 
-    it("does not ask an admin who signed in by phone code", async () => {
-      vi.stubEnv("ADMIN_MFA", "1");
+    it("does not let an admin who signed in by phone code use the panel, with the flag on or off", async () => {
       sessionOf("aal1", "otp");
       db.queue("doctors", { data: admin });
+      expect(await (await session()).getCurrentAdmin()).toBeNull();
+      vi.stubEnv("ADMIN_MFA", "1");
+      db.queue("doctors", { data: admin });
+      expect(await (await session()).getCurrentAdmin()).toBeNull();
+    });
+
+    it("still lets the CI account in: its link sign-in has no password to give", async () => {
+      vi.stubEnv("CI_LOGIN_EMAIL", "ci@jerusalem-doctors.invalid");
+      auth.getClaims.mockResolvedValue({ data: { claims: { sub: "u1", aal: "aal1", email: "ci@jerusalem-doctors.invalid", amr: [{ method: "otp" }] } }, error: null });
+      db.queue("doctors", { data: admin });
       expect(await (await session()).getCurrentAdmin()).toEqual(admin);
+    });
+
+    it("sends an admin who came by phone code to the password sign-in, not the code step", async () => {
+      sessionOf("aal1", "otp");
+      db.queue("doctors", { data: admin }, { data: admin });
+      await expect((await session()).requireAdmin()).rejects.toThrow("REDIRECT /login/dev");
+      await expect((await session()).requireAdmin()).rejects.not.toThrow("code=1");
     });
 
     it("sends the turned-away session to the code step instead of a 404", async () => {
@@ -72,7 +91,15 @@ describe("lib/auth/session", () => {
       await expect((await session()).requireAdmin()).rejects.toThrow("REDIRECT /login/dev?code=1");
     });
 
+    it("says a session that began with a phone code is refused, flag or not", async () => {
+      sessionOf("aal1", "otp");
+      expect(await (await session()).awaitingSecondFactor()).toBe(true);
+      expect(await (await session()).signedInByPassword()).toBe(false);
+    });
+
     it("says a password session awaits its code only when the flag is on and the code is not given", async () => {
+      sessionOf("aal1", "password");
+      expect(await (await session()).signedInByPassword()).toBe(true);
       sessionOf("aal1", "password");
       expect(await (await session()).awaitingSecondFactor()).toBe(false);
       vi.stubEnv("ADMIN_MFA", "1");
@@ -197,7 +224,7 @@ describe("lib/auth/session", () => {
     });
 
     it("returns an admin", async () => {
-      signedIn();
+      signedInByPassword();
       db.queue("doctors", { data: { id: "d1", is_admin: true, is_active: true } });
       expect(await (await session()).requireAdmin()).toEqual({ id: "d1", is_admin: true, is_active: true });
     });
@@ -215,7 +242,7 @@ describe("lib/auth/session", () => {
     });
 
     it("returns an active admin", async () => {
-      signedIn();
+      signedInByPassword();
       db.queue("doctors", { data: { id: "d1", is_admin: true, is_active: true } });
       expect(await check()).toEqual({ id: "d1", is_admin: true, is_active: true });
     });
