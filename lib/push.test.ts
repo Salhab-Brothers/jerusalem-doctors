@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const sendNotification = vi.hoisted(() => vi.fn());
 const claimOnce = vi.hoisted(() => vi.fn());
 const nextTurn = vi.hoisted(() => vi.fn());
-vi.mock("web-push", () => ({ default: { sendNotification } }));
+vi.mock("web-push", () => ({ sendNotification }));
 vi.mock("@/lib/otp/sentOnce", () => ({ claimOnce, nextTurn }));
 
 import { PUSH_THROTTLE_SECONDS, TURN_THROTTLE_SECONDS, pushConfigured, sendPushToAdmins, sendTestPush } from "./push";
