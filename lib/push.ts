@@ -8,7 +8,7 @@
 // that fails never fails what raised it.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import webpush from "web-push";
+import { sendNotification } from "web-push";
 import { claimOnce, nextTurn } from "@/lib/otp/sentOnce";
 
 export interface PushMessage {
@@ -62,7 +62,7 @@ async function deliver(
   await Promise.all(
     rows.map(async (row) => {
       try {
-        await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, body, {
+        await sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, body, {
           vapidDetails: keys,
           TTL: TTL_SECONDS,
           timeout: SEND_TIMEOUT_MS,
