@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   const service = createSupabaseServiceClient();
   const pending = await service
     .from("pending_signups")
-    .select("id, phone_e164, expires_at")
+    .select("id, phone_e164, expires_at, payload")
     .eq("id", parsed.signup_session_id)
     .maybeSingle();
   if (pending.error && pending.error.code !== "PGRST116") throw pending.error;
@@ -70,7 +70,12 @@ export async function POST(req: Request) {
   const { error: otpErr } = await ssr.auth.signInWithOtp({
     phone: pending.data.phone_e164,
   });
-  if (otpErr) {
+  if (otpErr && (await ownerIsAdmin(service, pending.data.payload))) {
+    // The hook never delivers a code to an admin's number (lib/otp/recipients.ts).
+    // The answer must still be the one every other number gets, or the resend
+    // button would say which numbers are admins'.
+    console.warn("[signup/resend] no code sent to an admin's number, as intended");
+  } else if (otpErr) {
     console.error("[signup/resend] signInWithOtp failed", otpErr);
     await recordSendFailure(service, failureReason(otpErr), { signupId: pending.data.id });
     return jsonError(502, { error: "otp_send_failed", code: "otp_send_failed" });
@@ -80,4 +85,13 @@ export async function POST(req: Request) {
   // (NIST SP 800-63B-4). MAX_ATTEMPTS in /api/signup/verify counts them all.
   await recordEvent(service, "otp_resent", { meta: { flow: "signup", signup: pending.data.id } });
   return jsonOk({ ok: true });
+}
+
+/** Whether this signup session is for a phone that already belongs to an admin. */
+async function ownerIsAdmin(service: ReturnType<typeof createSupabaseServiceClient>, payload: unknown): Promise<boolean> {
+  const id = (payload as { existing_doctor_id?: unknown } | null)?.existing_doctor_id;
+  if (typeof id !== "string") return false;
+  const owner = await service.from("doctors").select("is_admin").eq("id", id).maybeSingle();
+  if (owner.error && owner.error.code !== "PGRST116") throw owner.error;
+  return owner.data?.is_admin === true;
 }
