@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isKnownRecipient } from "./recipients";
 
-function fake(rows: { doctors?: boolean; pending?: boolean; error?: string }) {
+function fake(rows: { doctors?: boolean; admin?: boolean; pending?: boolean; error?: string }) {
   const calls: { table: string; method: string; args: unknown[] }[] = [];
   const client = {
     from(table: string) {
@@ -16,7 +16,7 @@ function fake(rows: { doctors?: boolean; pending?: boolean; error?: string }) {
       chain.maybeSingle = async () => {
         if (rows.error) return { data: null, error: { message: rows.error } };
         const hit = table === "doctors" ? rows.doctors : rows.pending;
-        return { data: hit ? { id: "x" } : null, error: null };
+        return { data: hit ? { id: "x", is_admin: table === "doctors" && Boolean(rows.admin) } : null, error: null };
       };
       return chain;
     },
@@ -28,6 +28,12 @@ describe("isKnownRecipient", () => {
   it("accepts an open account or a signup that has not expired", async () => {
     expect(await isKnownRecipient(fake({ doctors: true }).client, "+972501234567")).toBe(true);
     expect(await isKnownRecipient(fake({ pending: true }).client, "+972501234567")).toBe(true);
+  });
+
+  it("refuses an admin's number, even with a signup in progress for it", async () => {
+    expect(await isKnownRecipient(fake({ doctors: true, admin: true }).client, "+972501234567")).toBe(false);
+    // The signup form takes a phone that already has an account: that live row must not make it a recipient.
+    expect(await isKnownRecipient(fake({ doctors: true, admin: true, pending: true }).client, "+972501234567")).toBe(false);
   });
 
   it("refuses everyone else", async () => {

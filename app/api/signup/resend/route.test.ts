@@ -69,6 +69,26 @@ describe("POST /api/signup/resend", () => {
     await expect(call({ signup_session_id: SESSION })).rejects.toMatchObject({ code: "XX000" });
   });
 
+  it("answers an admin's number as it answers any other, though the hook refuses to send to it", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    db.queue("pending_signups", { data: { id: SESSION, phone_e164: "+972501234567", expires_at: future(), payload: { phone_e164: "+972501234567", existing_doctor_id: "d1" } } });
+    db.queue("doctors", { data: { is_admin: true } });
+    auth.signInWithOtp.mockResolvedValue({ error: { code: "unexpected_failure", message: "hook refused" } });
+    const res = await call({ signup_session_id: SESSION });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it("still reports a failed send to an ordinary owner's number, or to a new signup, as 502", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    auth.signInWithOtp.mockResolvedValue({ error: { code: "unexpected_failure", message: "provider down" } });
+    db.queue("pending_signups", { data: { id: SESSION, phone_e164: "+972501234567", expires_at: future(), payload: { phone_e164: "+972501234567", existing_doctor_id: "d1" } } });
+    db.queue("doctors", { data: { is_admin: false } });
+    expect((await call({ signup_session_id: SESSION })).status).toBe(502);
+    db.queue("pending_signups", { data: { id: SESSION, phone_e164: "+972501234567", expires_at: future(), payload: { phone_e164: "+972501234567" } } });
+    expect((await call({ signup_session_id: SESSION })).status).toBe(502);
+  });
+
   it("reports a failed send as 502", async () => {
     db.queue("pending_signups", { data: { id: SESSION, phone_e164: "+972501234567", expires_at: future() } });
     auth.signInWithOtp.mockResolvedValue({ error: { code: "over_sms_send_rate_limit", message: "down" } });

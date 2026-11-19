@@ -79,13 +79,14 @@ export async function POST(req: Request) {
   const service = createSupabaseServiceClient();
   const found = await service
     .from("doctors")
-    .select("id, is_active, is_phone_verified")
+    .select("id, is_active, is_phone_verified, is_admin")
     .eq("phone_e164", phoneE164)
     .maybeSingle();
   if (found.error && found.error.code !== "PGRST116") throw found.error;
 
-  // Deliberately uniform response, see the enumeration note above.
-  if (!found.data || !found.data.is_active || !found.data.is_phone_verified) {
+  // Deliberately uniform response, see the enumeration note above. An admin does
+  // not sign in by phone code, so none is sent to one (lib/auth/mfa.ts).
+  if (!found.data || !found.data.is_active || !found.data.is_phone_verified || found.data.is_admin) {
     return jsonOk({ ok: true });
   }
 
