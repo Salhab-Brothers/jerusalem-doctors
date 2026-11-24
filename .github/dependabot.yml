@@ -39,6 +39,10 @@ updates:
         patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
       test:
         patterns: ["vitest", "@vitest/*", "@playwright/*", "playwright"]
+      # The runner and the checker require exactly the core's version (a
+      # peer dependency), so the three move together or not at all.
+      stryker:
+        patterns: ["@stryker-mutator/*"]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly, day: monday }

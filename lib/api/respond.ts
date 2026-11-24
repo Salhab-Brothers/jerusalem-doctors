@@ -36,6 +36,7 @@ export function zodFields(e: z.ZodError): Record<string, string> {
 
 export function ipFromHeaders(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
+  // Stryker disable next-line OptionalChaining: split() always returns at least one item
   if (fwd) return fwd.split(",")[0]?.trim() ?? "unknown";
   const real = req.headers.get("x-real-ip");
   return real ?? "unknown";

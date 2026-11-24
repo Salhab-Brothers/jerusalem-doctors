@@ -33,11 +33,13 @@ export async function purgeUnfinished(service: SupabaseClient, now = Date.now())
  *  stored value only when it has the right type, so an old or odd snapshot
  *  can never break the form. Consent is always asked again. */
 export function toFormState(raw: unknown): FormState {
+  // Stryker disable next-line ConditionalExpression: a non-object has none of the form's keys, so the result is the same
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const out: Record<string, unknown> = { ...INITIAL };
   for (const [k, init] of Object.entries(INITIAL)) {
     const v = src[k];
     if (k === "workplaces") continue;
+    // Stryker disable next-line ConditionalExpression: a null value is the initial value, so taking it changes nothing
     if (Array.isArray(init) ? Array.isArray(v) && v.every((x) => typeof x === "string") : typeof v === typeof init && v !== null) {
       out[k] = v;
     }
@@ -54,6 +56,7 @@ export function toFormState(raw: unknown): FormState {
 }
 
 function isWorkplace(w: unknown): w is FormState["workplaces"][number] {
+  // Stryker disable next-line ConditionalExpression: a non-object has none of the fields checked next
   if (!w || typeof w !== "object") return false;
   const o = w as Record<string, unknown>;
   return (

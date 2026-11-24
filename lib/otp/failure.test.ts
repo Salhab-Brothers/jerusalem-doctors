@@ -55,8 +55,40 @@ describe("recordSendFailure", () => {
   });
 });
 
+describe("recordSendFailure when recording itself fails", () => {
+  it("logs it and carries on: the request that failed must not fail twice", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = new Error("db down");
+    const broken = {
+      from: () => {
+        throw boom;
+      },
+    } as unknown as SupabaseClient;
+    await expect(recordSendFailure(broken, "daily_cap", { phoneE164: "+972501234567" })).resolves.toBeUndefined();
+    expect(log).toHaveBeenCalledWith("[otp] failure not recorded", boom);
+    log.mockRestore();
+  });
+});
+
 describe("recordStopped", () => {
   beforeEach(() => db.reset());
+
+  it("allows one write a minute per reason: the key names the minute", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(125_000);
+    const claim = vi.spyOn(sentOnce, "claimOnce").mockResolvedValue(true);
+    try {
+      await recordStopped("our_rate_limit");
+      await recordStopped("turnstile_failed");
+      expect(claim.mock.calls).toEqual([
+        ["otp-stopped:our_rate_limit:2", 120],
+        ["otp-stopped:turnstile_failed:2", 120],
+      ]);
+    } finally {
+      vi.useRealTimers();
+      claim.mockRestore();
+    }
+  });
 
   it("counts a stopped request once a minute per reason, so a flood is not a flood of writes", async () => {
     vi.spyOn(sentOnce, "claimOnce").mockResolvedValueOnce(true).mockResolvedValueOnce(false);

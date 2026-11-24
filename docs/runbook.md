@@ -925,6 +925,18 @@ Setting it up, once per Supabase project:
 The smoke check records no traces, screenshots or videos: they would record
 the session and admin pages, and the repository is public.
 
+## Mutation testing (weekly, advisory)
+
+`.github/workflows/mutation.yml` runs Stryker (`stryker.config.json`) every Sunday and on demand (Actions, "Mutation testing", Run workflow). It makes small changes to the sign-in, code, rate-limit and proxy code (`lib/auth`, `lib/otp`, `lib/security`, `lib/api`, `lib/signup`, `proxy.ts`) and runs the unit tests against each. A change no test notices is a behaviour the tests do not pin down.
+
+- **Never a required check.** It fails only if the score falls below `thresholds.break` (95; the scope scored 100% of its testable mutants on 24 Nov 2026, up from 80% that morning): a regression, not a to-do list. The run page shows the score and the weakest files first.
+- **A new missed mutant** (the `mutation-report` artifact, an HTML page kept 30 days, lists each with its code) means either a test is missing, so write it, or the change cannot alter behaviour (a `trim()` after a split that already strips whitespace, a guard the line above repeats). For those, add `// Stryker disable next-line <Mutator>: <why>` above the line (several mutators: comma-separated). The reason shows in the report. Inside a method chain the comment attaches to nothing, so put `// Stryker disable <Mutator>: <why>` above the statement instead. Do not disable a mutant only because writing the test is tedious.
+- **Every run is a full one** (about 6 to 8 minutes on a runner, 4 here). Stryker's incremental mode is not used: it keeps the old result of a mutant in code that runs when a module loads, whatever the tests do now, so a score could read worse than the tests deserve.
+- **Locally:** `npm run test:mutation`. It writes the report to `reports/mutation/mutation.html`; the sandbox (`.stryker-tmp`) and reports are git-ignored. `-m lib/auth/session.ts` limits it to one file.
+- **Updating:** `@stryker-mutator/core`, `vitest-runner` and `typescript-checker` must be the same version (a peer dependency), so Dependabot bumps them as one group. Stryker needs Node 22 or later.
+- **Leave `ignoreStatic` off.** With it on, Stryker skipped mutants in code that runs when a module loads (tables, constants) but still counted them as missed, which understated the score by about 8 points.
+- **Left out on purpose:** string-literal mutants (Arabic messages and log text: over half of all survivors and rarely a behaviour), and the route handlers under `app/api` (about 57% on a trial run, mostly response shapes). Add routes to `mutate` only if a full run's time (about 35 minutes locally) is acceptable.
+
 ## Common one-liners
 
 ### Promote yourself to admin

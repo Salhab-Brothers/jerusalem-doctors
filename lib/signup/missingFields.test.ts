@@ -59,6 +59,28 @@ describe("getMissingFields", () => {
     ]);
   });
 
+  it("asks for the Hebrew name only when a license that counts is IL", () => {
+    const noHebrew = { ...COMPLETE, hebrew_first_name: "", hebrew_family_name: "" };
+    const hebrew = (f: SignupFields) => keys(f).filter((k) => k.startsWith("hebrew_"));
+    // Primary PS, secondary ticked but PS: no.
+    expect(hebrew({ ...noHebrew, license_region: "PS", has_secondary_license: true, secondary_license_region: "PS", secondary_license_number: "1" })).toEqual([]);
+    // Primary PS, an IL secondary left over from before it was unticked: no.
+    expect(hebrew({ ...noHebrew, license_region: "PS", has_secondary_license: false, secondary_license_region: "IL" })).toEqual([]);
+    // Primary PS, IL secondary ticked: yes. Primary IL: yes.
+    expect(hebrew({ ...noHebrew, license_region: "PS", has_secondary_license: true, secondary_license_region: "IL", secondary_license_number: "1" })).toEqual(["hebrew_first_name", "hebrew_family_name"]);
+    expect(hebrew({ ...noHebrew, license_region: "IL" })).toEqual(["hebrew_first_name", "hebrew_family_name"]);
+  });
+
+  it("wants one named workplace, wherever it is in the list, and trims the name it shows for a bad clinic phone", () => {
+    const named = { ...WP, name: "المقاصد" };
+    expect(keys({ ...COMPLETE, workplaces: [named, WP] })).not.toContain("workplace_0_name");
+    expect(keys({ ...COMPLETE, workplaces: [WP, named] })).not.toContain("workplace_0_name");
+    expect(keys({ ...COMPLETE, workplaces: [{ ...WP, name: "   " }] })).toContain("workplace_0_name");
+    const bad = getMissingFields({ ...COMPLETE, workplaces: [{ ...named, name: "  عيادة  ", workplace_type: "clinic" as const, phone: "abc" }] });
+    expect(bad.map((m) => m.key)).toEqual(["workplace_0_phone"]);
+    expect(bad[0].label).toContain("(عيادة)");
+  });
+
   it("is empty for a complete form", () => {
     expect(getMissingFields(COMPLETE)).toEqual([]);
   });

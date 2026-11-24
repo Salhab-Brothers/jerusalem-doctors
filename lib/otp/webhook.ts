@@ -64,6 +64,7 @@ export function verifySendSmsHook(
   // key rotation. Any one matching is a pass.
   for (const entry of signatureHeader.split(" ")) {
     const comma = entry.indexOf(",");
+    // Stryker disable next-line ConditionalExpression,UnaryOperator: an entry with no comma can never equal the 44-character signature
     if (comma === -1) continue;
     if (entry.slice(0, comma) !== "v1") continue;
     if (constantTimeEquals(entry.slice(comma + 1), expected)) return true;

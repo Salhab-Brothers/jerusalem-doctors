@@ -1,0 +1,57 @@
+# Mutation testing (stryker.config.json): Stryker makes small changes to the
+# security-critical code (sign-in, codes, rate limits, the proxy) and runs the
+# unit tests against each; a change no test notices is a behaviour the tests do
+# not pin down. Weekly and on demand, never a required check on a pull request.
+# The job fails only when the score falls below thresholds.break. Every run is
+# a full one: Stryker's incremental mode keeps stale results for code that runs
+# when a module loads, which made a good score read as a bad one.
+name: Mutation testing
+
+on:
+  schedule:
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+  # Only a change to the setup itself runs it on a pull request, to prove the
+  # setup still works; it is not a required check.
+  pull_request:
+    paths:
+      - .github/workflows/mutation.yml
+      - stryker.config.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation
+  cancel-in-progress: false
+
+jobs:
+  mutation:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # GITHUB_ACTIONS is turned off for Stryker only: Vitest would otherwise
+      # write a "Test Report" to the run page for every one of the thousand
+      # mutant runs, each with the failing test that caught the mutant.
+      - run: npx stryker run
+        env:
+          GITHUB_ACTIONS: "false"
+      - name: Show the score
+        if: ${{ !cancelled() && hashFiles('reports/mutation/mutation.json') != '' }}
+        run: node scripts/mutation-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-report
+          path: reports/mutation/mutation.html
+          retention-days: 30
+          if-no-files-found: ignore

@@ -53,6 +53,16 @@ describe("the window", () => {
     expect(await enrolWindowOpen(fake({ meta: { mfa_enrol_until: 2000 } }).client, "u1", 2000)).toBe(false);
     expect(await enrolWindowOpen(fake({ meta: { mfa_enrol_until: null } }).client, "u1", 1000)).toBe(false);
     expect(await enrolWindowOpen(fake().client, "u1", 1000)).toBe(false);
+    // Only a number is a time: a string that would compare as one is not.
+    expect(await enrolWindowOpen(fake({ meta: { mfa_enrol_until: "2000" } }).client, "u1", 1000)).toBe(false);
+    expect(await enrolWindowOpen(fake({ meta: { mfa_enrol_until: true } }).client, "u1", 0)).toBe(false);
+  });
+
+  it("is open for fifteen minutes, and closed for an account with no metadata at all", async () => {
+    expect(ENROL_WINDOW_MS).toBe(15 * 60 * 1000);
+    const bare = fake();
+    bare.admin.getUserById.mockResolvedValueOnce({ data: { user: {} } } as never);
+    expect(await enrolWindowOpen(bare.client, "u1", 1000)).toBe(false);
   });
 
   it("reads as closed, and says so, when the account cannot be read or cleared", async () => {

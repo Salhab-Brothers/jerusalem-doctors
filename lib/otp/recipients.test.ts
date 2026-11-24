@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isKnownRecipient } from "./recipients";
 
-function fake(rows: { doctors?: boolean; pending?: boolean; error?: string }) {
+function fake(rows: { doctors?: boolean; pending?: boolean; error?: string; errorTable?: string }) {
   const calls: { table: string; method: string; args: unknown[] }[] = [];
   const client = {
     from(table: string) {
@@ -14,7 +14,7 @@ function fake(rows: { doctors?: boolean; pending?: boolean; error?: string }) {
         };
       }
       chain.maybeSingle = async () => {
-        if (rows.error) return { data: null, error: { message: rows.error } };
+        if (rows.error && (!rows.errorTable || rows.errorTable === table)) return { data: null, error: { message: rows.error } };
         const hit = table === "doctors" ? rows.doctors : rows.pending;
         return { data: hit ? { id: "x" } : null, error: null };
       };
@@ -43,5 +43,10 @@ describe("isKnownRecipient", () => {
 
   it("throws rather than guessing when the database fails", async () => {
     await expect(isKnownRecipient(fake({ error: "down" }).client, "+972501234567")).rejects.toBeTruthy();
+  });
+
+  it("throws when either lookup fails, whatever the other one found", async () => {
+    await expect(isKnownRecipient(fake({ pending: true, error: "down", errorTable: "doctors" }).client, "+972501234567")).rejects.toMatchObject({ message: "down" });
+    await expect(isKnownRecipient(fake({ doctors: true, error: "down", errorTable: "pending_signups" }).client, "+972501234567")).rejects.toMatchObject({ message: "down" });
   });
 });

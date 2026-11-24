@@ -27,6 +27,8 @@ describe("buildCsp", () => {
     expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob: https://projref.supabase.co");
     expect(directive(csp, "connect-src")).toBe("connect-src 'self' https://challenges.cloudflare.com https://o1.ingest.de.sentry.io");
     expect(directive(csp, "frame-src")).toBe("frame-src https://challenges.cloudflare.com");
+    // Fonts come from the site itself: the app ships its own.
+    expect(directive(csp, "font-src")).toBe("font-src 'self'");
   });
 
   it("keeps the framing and form protections", () => {
