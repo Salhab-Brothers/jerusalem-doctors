@@ -8,7 +8,11 @@ test.use({ storageState: stateFile("doctor") });
 
 async function search(page: Page, q: string) {
   await page.goto("/dashboard");
+  // Wait for the search this typing starts: before it answers, the page still
+  // shows the idle dashboard's cards, which the search is about to replace.
+  const searched = page.waitForResponse((r) => r.url().includes("/api/search") && r.ok());
   await page.getByPlaceholder("ابحث عن طبيب أو تخصص").fill(q);
+  await searched;
 }
 
 /** A colleague's number and email are behind a tap (#16): press the first card's. */
