@@ -1,3 +1,4 @@
+import type { E164 } from "@/lib/normalize/phone";
 import type { OtpSendResult, OtpSender } from "./provider";
 
 /**
@@ -16,7 +17,7 @@ export class MockOtpSender implements OtpSender {
     }
   }
 
-  async send(phoneE164: string, code: string): Promise<OtpSendResult> {
+  async send(phoneE164: E164, code: string): Promise<OtpSendResult> {
     // stderr so it shows up in `next dev` output and is never mistaken for a
     // real delivery channel.
     // One line per code, whatever the values hold.

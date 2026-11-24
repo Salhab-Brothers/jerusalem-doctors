@@ -7,10 +7,10 @@ import "@/lib/zodArabic";
 
 export interface ApiErrorBody {
   error: string;
-  code?: string;
-  fields?: Record<string, string>;
+  code?: string | undefined;
+  fields?: Record<string, string> | undefined;
   /** Why a reason is wanted, when the client words the question by it. */
-  reason_kind?: "corrected_number" | "identity";
+  reason_kind?: "corrected_number" | "identity" | undefined;
 }
 
 export function jsonOk<T>(data: T, init?: ResponseInit): NextResponse {
@@ -36,6 +36,7 @@ export function zodFields(e: z.ZodError): Record<string, string> {
 
 export function ipFromHeaders(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
+  // Stryker disable next-line OptionalChaining: split() always returns at least one item
   if (fwd) return fwd.split(",")[0]?.trim() ?? "unknown";
   const real = req.headers.get("x-real-ip");
   return real ?? "unknown";

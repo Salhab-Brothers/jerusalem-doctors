@@ -13,6 +13,7 @@
 //   2. the rate limit (Redis), with the search query itself
 // The usage count is written after the response is sent.
 
+import { withoutUndefined } from "@/lib/withoutUndefined";
 import { after } from "next/server";
 import { z } from "zod";
 import { cachedInstitutions, cachedSiteSettings } from "@/lib/cachedReads";
@@ -91,7 +92,7 @@ export const GET = withJsonErrors(async (req: Request) => {
   const [rl, rlDay, found] = await Promise.all([
     rateLimit("search", `doctor:${me.id}`),
     rateLimit("searchDaily", `doctor:${me.id}`),
-    service.rpc("search_directory", {
+    service.rpc("search_directory", withoutUndefined({
       // Left out means NULL: every optional argument defaults to it.
       p_term: term || undefined,
       p_specialty_id: specialty_id ?? undefined,
@@ -102,7 +103,7 @@ export const GET = withJsonErrors(async (req: Request) => {
       p_workplace_type: workplace_type ?? undefined,
       p_stage: stage ?? undefined,
       p_seeking_work: seeking_work === "1",
-    }),
+    })),
   ]);
   if (!rl.success) {
     return jsonError(429, { error: "rate_limited", code: "rate_limited" });

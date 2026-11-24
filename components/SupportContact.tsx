@@ -6,7 +6,7 @@
 const SUPPORT_NUMBER = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP_NUMBER;
 
 /** `message` is the text WhatsApp opens with; none opens an empty chat. */
-export function SupportContact({ message }: { message?: string } = {}) {
+export function SupportContact({ message }: { message?: string | undefined } = {}) {
   if (!SUPPORT_NUMBER) return null;
 
   return (

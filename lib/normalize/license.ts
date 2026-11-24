@@ -84,7 +84,10 @@ export function parseIlLicense(raw: string): ParsedIlLicense {
 
   const separated = input.match(IL_SEPARATED);
   if (separated) {
-    const [, professionCode, rest] = separated;
+    const professionCode = separated[1];
+    const rest = separated[2];
+    // Both groups are required by IL_SEPARATED; this is only for the compiler.
+    if (professionCode === undefined || rest === undefined) return { ok: false, reason: "not_numeric" };
     if (stripLeadingZeros(professionCode) !== IL_PHYSICIAN_PROFESSION_CODE) {
       return {
         ok: false,

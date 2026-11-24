@@ -25,6 +25,12 @@ describe("isSuperAdmin", () => {
     expect(await isSuperAdmin(service(undefined), "u1")).toBe(false);
   });
 
+  it("asks Supabase nothing when the list is empty", async () => {
+    const getUserById = vi.fn(async () => ({ data: { user: { email: "boss@x.com", email_confirmed_at: "2026-01-01T00:00:00Z" } } }));
+    expect(await isSuperAdmin({ auth: { admin: { getUserById } } } as never, "u1")).toBe(false);
+    expect(getUserById).not.toHaveBeenCalled();
+  });
+
   it("does not trust an address nobody has confirmed", async () => {
     vi.stubEnv("SUPER_ADMIN_EMAILS", "boss@x.com");
     expect(await isSuperAdmin(service("boss@x.com", false), "u1")).toBe(false);

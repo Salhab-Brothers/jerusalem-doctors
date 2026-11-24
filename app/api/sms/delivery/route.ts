@@ -3,7 +3,7 @@
 // doctor or the signup the number belongs to; the number itself isn't kept.
 
 import { DELIVERY_STATUS, deliveryDelaySeconds, validDeliveryKey } from "@/lib/otp/delivery";
-import { InvalidPhoneError, normalizePhone } from "@/lib/normalize/phone";
+import { InvalidPhoneError, normalizePhone, type E164 } from "@/lib/normalize/phone";
 import { textOwner } from "@/lib/otp/owner";
 import { numberPrefix } from "@/lib/otp/prefix";
 import { claimOnce } from "@/lib/otp/sentOnce";
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   // Another status is not one we count; answered so SMS4FREE stops asking.
   if (!form || !kind) return empty(200);
 
-  let phone: string | null = null;
+  let phone: E164 | null = null;
   try {
     phone = normalizePhone(String(form.get("to") ?? ""));
   } catch (e) {

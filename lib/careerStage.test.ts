@@ -267,7 +267,7 @@ describe("applyStageCascade", () => {
 
   it("gives an unnamed row the stage's default type, and corrects a named row the stage does not offer", () => {
     const out = applyStageCascade("general", { ...base, workplaces: [wp({ name: " ", workplace_type: "hospital" }), wp()] });
-    expect(out.workplaces[0].workplace_type).toBe("clinic");
+    expect(out.workplaces[0]!.workplace_type).toBe("clinic");
     expect(out.workplacesChanged).toBe(true);
   });
 

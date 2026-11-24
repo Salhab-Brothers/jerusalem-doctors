@@ -83,6 +83,6 @@ export const FIELD_LABELS: Record<string, string> = {
 export function fieldErrorMessage(fields: Record<string, string> | undefined): string | null {
   const [path, message] = Object.entries(fields ?? {})[0] ?? [];
   if (!path || !message) return null;
-  const label = FIELD_LABELS[path.split(".")[0]];
+  const label = FIELD_LABELS[path.split(".")[0] ?? path];
   return label ? `${label}: ${message}` : message;
 }

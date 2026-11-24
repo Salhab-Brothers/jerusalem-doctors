@@ -9,6 +9,7 @@
 //
 // The OTP value must never reach a log line, an error message, or Sentry.
 
+import { isE164 } from "@/lib/normalize/phone";
 import * as Sentry from "@sentry/nextjs";
 import { after } from "next/server";
 import { isPhoneAuthDisabled } from "@/lib/auth/session";
@@ -42,13 +43,11 @@ interface SendSmsHookPayload {
  * SMS itself went out fine. The body content is irrelevant; the header is not.
  */
 function hookResponse(status: number, headers?: HeadersInit): Response {
-  return Response.json({}, { status, headers });
+  return Response.json({}, headers ? { status, headers } : { status });
 }
 
-/** Supabase stores phones without a leading +; the Meta sender wants E.164. */
-function toE164(phone: string): string {
-  return phone.startsWith("+") ? phone : `+${phone}`;
-}
+/** Supabase stores phones without a leading +; the senders want E.164. */
+const withPlus = (phone: string): string => (phone.startsWith("+") ? phone : `+${phone}`);
 
 export async function POST(req: Request) {
   const secret = process.env.SEND_SMS_HOOK_SECRET;
@@ -97,7 +96,11 @@ export async function POST(req: Request) {
     return hookResponse(400);
   }
 
-  const e164 = toE164(phone);
+  const e164 = withPlus(phone);
+  if (!isE164(e164)) {
+    Sentry.captureException(new Error("Send SMS hook payload carried a phone that is not in E.164 form"));
+    return hookResponse(400);
+  }
 
   // This code already went to this phone (a retry after a slow send): answer,
   // don't send it again (lib/otp/sentOnce.ts). Before the checks below, so a

@@ -83,9 +83,9 @@ describe("institutionUsage", () => {
     ];
     const { client } = scripted({ doctor_workplaces: [{ data: rows }], doctors: [{ data: [doctor("d1", "ب"), doctor("d2", "أ"), doctor("staff", "م", true, false)] }] });
     const out = await institutionUsage(client);
-    expect(out.doctors.i1.map((d) => d.name)).toEqual(["أ س", "ب س"]);
+    expect(out.doctors.i1!.map((d) => d.name)).toEqual(["أ س", "ب س"]);
     expect(out.unmatched).toEqual([{ name: "مجهول", count: 2, doctors: expect.any(Array) }]);
-    expect(out.unmatched[0].doctors.map((d) => d.id).sort()).toEqual(["d1", "staff"]);
+    expect(out.unmatched[0]!.doctors.map((d) => d.id).sort()).toEqual(["d1", "staff"]);
   });
 
   it("orders unlinked names by how many doctors typed them, then by name", async () => {

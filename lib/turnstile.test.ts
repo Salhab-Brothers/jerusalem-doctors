@@ -35,7 +35,7 @@ describe("verifyTurnstile", () => {
     it("passes the token and IP to Cloudflare", async () => {
       fetchMock.mockResolvedValue(Response.json({ success: true }));
       expect(await verifyTurnstile("t", "1.2.3.4")).toEqual({ ok: true, errors: undefined });
-      const body = fetchMock.mock.calls[0][1].body as URLSearchParams;
+      const body = fetchMock.mock.calls[0]![1].body as URLSearchParams;
       expect(Object.fromEntries(body)).toEqual({ secret: "sk", response: "t", remoteip: "1.2.3.4" });
     });
 

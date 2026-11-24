@@ -55,7 +55,7 @@ export interface ExplainInput {
   /** This doctor also holds an Israeli licence in the other slot. */
   hasSecondaryIl?: boolean;
   /** Fresh comparison, when the caller has just re-run the check. */
-  match?: NameMatch;
+  match?: NameMatch | undefined;
 }
 
 /** Jerusalem date, no time: these are "when did we last sync" facts. */
@@ -104,9 +104,9 @@ function syncedLine(input: ExplainInput): string {
 /** The note about a number that could be read two ways, when it applies. */
 function ambiguityNote(input: ExplainInput): string | null {
   if (input.region !== "IL" || !input.licenseNumber) return null;
-  const candidates = ilLicenseCandidates(input.licenseNumber);
-  if (!candidates || candidates.length < 2) return null;
-  return `ملاحظة: ${ltr(input.licenseNumber)} يمكن أن يُقرأ بطريقتين (${ltr(candidates[0])} أو ${ltr(candidates[1])} بعد إسقاط رقم المهنة 1)، والمحفوظ هو ${ltr(input.licenseNumber)}.`;
+  const [first, second] = ilLicenseCandidates(input.licenseNumber) ?? [];
+  if (!first || !second) return null;
+  return `ملاحظة: ${ltr(input.licenseNumber)} يمكن أن يُقرأ بطريقتين (${ltr(first)} أو ${ltr(second)} بعد إسقاط رقم المهنة 1)، والمحفوظ هو ${ltr(input.licenseNumber)}.`;
 }
 
 function push(list: string[], line: string | null) {

@@ -30,7 +30,7 @@ import {
   type LicenseRegion,
   licenseFormatErrorMessage,
 } from "@/lib/normalize/license";
-import { InvalidPhoneError, normalizePhone } from "@/lib/normalize/phone";
+import { InvalidPhoneError, normalizePhone, type E164 } from "@/lib/normalize/phone";
 import { failureReason, recordSendFailure, recordStopped } from "@/lib/otp/failure";
 import { rejectUndeliverablePhone, rejectWhilePhoneAuthDisabled } from "@/lib/otp/phone_gate";
 import { rateLimit } from "@/lib/ratelimit";
@@ -144,7 +144,7 @@ export const POST = withJsonErrors(async (req: Request) => {
     return jsonError(403, { error: "turnstile_failed", code: "turnstile_failed" });
   }
 
-  let phoneE164: string;
+  let phoneE164: E164;
   try {
     phoneE164 = normalizePhone(parsed.phone);
   } catch (e) {

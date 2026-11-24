@@ -85,6 +85,7 @@ export const cleanLicense = (region: LicenseRegion, next: string) => {
   if (region === "PS") return ascii.replace(/[,()]/g, "");
   const cleaned = ascii.replace(/[^\d-]/g, "");
   const cut = cleaned.indexOf("-");
+  // Stryker disable next-line ConditionalExpression: with no hyphen both branches give the same string
   return cut === -1
     ? cleaned
     : cleaned.slice(0, cut + 1) + cleaned.slice(cut + 1).replace(/-/g, "");
@@ -110,6 +111,7 @@ export function applyStage(
         : []
       : s.specialty_ids.filter((id) => id !== generalSpecialtyId),
     subspecialty: opt.showsSpecialtyPicker ? s.subspecialty : "",
+    // Stryker disable next-line ArrayDeclaration: every stage shows certificates today; the empty list is for a stage that does not
     certificates: opt.showsCertificates ? s.certificates : [],
     residency_start_year: opt.requiresResidencyStartYear
       ? s.residency_start_year

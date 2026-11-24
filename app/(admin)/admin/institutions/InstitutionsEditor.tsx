@@ -87,7 +87,7 @@ export function InstitutionsEditor({
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }).catch(() => null);
     const b = await res?.json().catch(() => null);
     if (!res?.ok) {

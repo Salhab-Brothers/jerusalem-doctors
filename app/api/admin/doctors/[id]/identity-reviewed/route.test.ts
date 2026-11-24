@@ -58,9 +58,9 @@ describe("POST /api/admin/doctors/[id]/identity-reviewed", () => {
   it("marks the review, only while unreviewed, and logs the method and reason with the admin", async () => {
     db.queue("doctors", { data: { id: ID, is_admin: false, is_visible: true, is_admin_approved: true, identity_reviewed_at: null } }, { data: [{ id: ID }] });
     expect((await call()).status).toBe(200);
-    expect(db.argsOf("doctors", "update")[0][0]).toEqual({ identity_reviewed_at: expect.any(String) });
+    expect(db.argsOf("doctors", "update")[0]![0]).toEqual({ identity_reviewed_at: expect.any(String) });
     expect(db.argsOf("doctors", "is")).toEqual([["identity_reviewed_at", null]]);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toEqual({
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toEqual({
       actor_doctor_id: "a1",
       action: "admin_identity_reviewed",
       target_doctor_id: ID,

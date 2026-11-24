@@ -87,10 +87,17 @@ export async function POST(req: Request) {
   return jsonOk({ ok: true });
 }
 
+/** The doctor a signup session was started for, when its phone already had one. */
+function existingDoctorId(payload: unknown): string | undefined {
+  if (typeof payload !== "object" || payload === null || !("existing_doctor_id" in payload)) return undefined;
+  const id = payload.existing_doctor_id;
+  return typeof id === "string" ? id : undefined;
+}
+
 /** Whether this signup session is for a phone that already belongs to an admin. */
 async function ownerIsAdmin(service: ReturnType<typeof createSupabaseServiceClient>, payload: unknown): Promise<boolean> {
-  const id = (payload as { existing_doctor_id?: unknown } | null)?.existing_doctor_id;
-  if (typeof id !== "string") return false;
+  const id = existingDoctorId(payload);
+  if (id === undefined) return false;
   const owner = await service.from("doctors").select("is_admin").eq("id", id).maybeSingle();
   if (owner.error && owner.error.code !== "PGRST116") throw owner.error;
   return owner.data?.is_admin === true;

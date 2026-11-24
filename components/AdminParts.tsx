@@ -37,9 +37,9 @@ export function Tile({
 }: {
   label: string;
   value: number | string;
-  sub?: string;
-  href?: string;
-  tone?: "plain" | "warn";
+  sub?: string | undefined;
+  href?: string | undefined;
+  tone?: "plain" | "warn" | undefined;
   /** The tile is the filter on screen. */
   current?: boolean;
 }) {

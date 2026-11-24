@@ -24,7 +24,8 @@ const COLUMNS: [key: string, label: string][] = [
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 export function UsageSection({ days }: { days: MetricsDay[] }) {
-  if (days.length === 0) {
+  const latest = days[0];
+  if (!latest) {
     return (
       <Section id="usage" title="الاستخدام الفعلي">
         <p className="rounded-lg border border-line p-3 text-sm">
@@ -33,7 +34,6 @@ export function UsageSection({ days }: { days: MetricsDay[] }) {
       </Section>
     );
   }
-  const latest = days[0];
   const dbShare = latest.db_bytes / DB_LIMIT_BYTES;
   const smsPeak = Math.max(...days.map((d) => d.counts.sms_sent ?? 0));
   return (

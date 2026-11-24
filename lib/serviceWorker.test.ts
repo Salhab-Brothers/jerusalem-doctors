@@ -24,7 +24,7 @@ function load() {
 /** Runs a handler and returns the promise it gave to waitUntil. */
 async function fire(type: string, event: Record<string, unknown>) {
   let work: Promise<unknown> = Promise.resolve();
-  handlers[type]({ ...event, waitUntil: (p: Promise<unknown>) => (work = p) });
+  handlers[type]!({ ...event, waitUntil: (p: Promise<unknown>) => (work = p) });
   await work;
 }
 const push = (data: unknown) => fire("push", { data: { json: () => data } });
@@ -70,7 +70,7 @@ describe("a tap on it", () => {
     expect(close).toHaveBeenCalled();
     expect(win.focus).toHaveBeenCalled();
     expect(win.navigate).toHaveBeenCalledWith("/admin/reports");
-    expect(windows[0].focus).not.toHaveBeenCalled();
+    expect(windows[0]!.focus).not.toHaveBeenCalled();
     expect(openWindow).not.toHaveBeenCalled();
   });
 

@@ -3,11 +3,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const redis = vi.hoisted(() => ({ exists: vi.fn(), set: vi.fn(), ctor: vi.fn() }));
+const redis = vi.hoisted(() => ({ exists: vi.fn(), set: vi.fn(), incr: vi.fn(), ctor: vi.fn() }));
 vi.mock("@upstash/redis", () => ({
   Redis: class {
     exists = redis.exists;
     set = redis.set;
+    incr = redis.incr;
     constructor(opts: unknown) {
       redis.ctor(opts);
     }
@@ -25,7 +26,7 @@ describe("with Redis", () => {
     const { alreadySent } = await import("./sentOnce");
     redis.exists.mockResolvedValue(0);
     await alreadySent("k");
-    const opts = redis.ctor.mock.calls[0][0];
+    const opts = redis.ctor.mock.calls[0]![0];
     expect(opts.retry).toBe(false);
     expect(opts.signal()).toBeInstanceOf(AbortSignal);
   });
@@ -54,5 +55,31 @@ describe("with Redis", () => {
     expect(await claimOnce("c", 30)).toBe(false);
     expect(await claimOnce("c", 30)).toBe(true);
     expect(redis.set).toHaveBeenCalledWith("c", 1, { nx: true, ex: 30 });
+  });
+});
+
+describe("Redis needs both its address and its token", () => {
+  it("falls back to local memory when either is missing", async () => {
+    const { alreadySent } = await import("./sentOnce");
+    for (const [url, token] of [["https://redis.example", ""], ["", "t"]]) {
+      vi.stubEnv("UPSTASH_REDIS_REST_URL", url);
+      vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", token);
+      expect(await alreadySent(`only-one-${url}`)).toBe(false);
+    }
+    expect(redis.ctor).not.toHaveBeenCalled();
+    expect(redis.exists).not.toHaveBeenCalled();
+  });
+});
+
+describe("taking turns with Redis", () => {
+  it("uses the shared counter, and a random turn when Redis fails", async () => {
+    const { nextTurn } = await import("./sentOnce");
+    redis.incr.mockResolvedValueOnce(7);
+    expect(await nextTurn("turn")).toBe(7);
+    expect(redis.incr).toHaveBeenCalledWith("turn");
+    redis.incr.mockRejectedValueOnce(new Error("down"));
+    const spin = vi.spyOn(Math, "random").mockReturnValue(0.25);
+    expect(await nextTurn("turn")).toBe(2 ** 29);
+    spin.mockRestore();
   });
 });

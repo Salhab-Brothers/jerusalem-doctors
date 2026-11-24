@@ -33,6 +33,13 @@ describe("devLoginEnabled", () => {
   });
 });
 
+describe("isAllowedDevEmail and an empty address", () => {
+  it("never matches an empty or blank address, even against a list with an empty entry", () => {
+    expect(isAllowedDevEmail("", [""])).toBe(false);
+    expect(isAllowedDevEmail("   ", [""])).toBe(false);
+  });
+});
+
 describe("isAllowedDevEmail", () => {
   const list = ["dev@example.com", "qa@example.com"];
 

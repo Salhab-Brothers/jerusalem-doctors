@@ -1,3 +1,4 @@
+import { tel } from "@/test/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/test/fakeSupabase";
@@ -32,7 +33,7 @@ describe("recordSendFailure", () => {
   it("counts a doctor's failure against the doctor, with the reason and no number", async () => {
     db.queue("doctors", { data: { id: "doc-1" } });
     db.queue("pending_signups", { data: null });
-    await recordSendFailure(service, "daily_cap", { phoneE164: "+972501234567" });
+    await recordSendFailure(service, "daily_cap", { phoneE164: tel("+972501234567") });
     expect(db.argsOf("usage_events", "insert")).toEqual([
       [{ kind: "sms_failed", doctor_id: "doc-1", meta: { reason: "daily_cap", prefix: "050" } }],
     ]);
@@ -41,7 +42,7 @@ describe("recordSendFailure", () => {
   it("counts a signup's failure against the signup", async () => {
     db.queue("doctors", { data: null });
     db.queue("pending_signups", { data: { id: "signup-1" } });
-    await recordSendFailure(service, "sms4free_timeout", { phoneE164: "+972501234567" });
+    await recordSendFailure(service, "sms4free_timeout", { phoneE164: tel("+972501234567") });
     expect(db.argsOf("usage_events", "insert")).toEqual([
       [{ kind: "sms_failed", doctor_id: null, meta: { reason: "sms4free_timeout", prefix: "050", signup: "signup-1" } }],
     ]);
@@ -50,13 +51,45 @@ describe("recordSendFailure", () => {
   it("records the reason alone for a number nobody holds", async () => {
     db.queue("doctors", { data: null });
     db.queue("pending_signups", { data: null });
-    await recordSendFailure(service, "unknown", { phoneE164: "+972501234567" });
+    await recordSendFailure(service, "unknown", { phoneE164: tel("+972501234567") });
     expect(db.argsOf("usage_events", "insert")).toEqual([[{ kind: "sms_failed", doctor_id: null, meta: { reason: "unknown", prefix: "050" } }]]);
+  });
+});
+
+describe("recordSendFailure when recording itself fails", () => {
+  it("logs it and carries on: the request that failed must not fail twice", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const boom = new Error("db down");
+    const broken = {
+      from: () => {
+        throw boom;
+      },
+    } as unknown as SupabaseClient;
+    await expect(recordSendFailure(broken, "daily_cap", { phoneE164: tel("+972501234567") })).resolves.toBeUndefined();
+    expect(log).toHaveBeenCalledWith("[otp] failure not recorded", boom);
+    log.mockRestore();
   });
 });
 
 describe("recordStopped", () => {
   beforeEach(() => db.reset());
+
+  it("allows one write a minute per reason: the key names the minute", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(125_000);
+    const claim = vi.spyOn(sentOnce, "claimOnce").mockResolvedValue(true);
+    try {
+      await recordStopped("our_rate_limit");
+      await recordStopped("turnstile_failed");
+      expect(claim.mock.calls).toEqual([
+        ["otp-stopped:our_rate_limit:2", 120],
+        ["otp-stopped:turnstile_failed:2", 120],
+      ]);
+    } finally {
+      vi.useRealTimers();
+      claim.mockRestore();
+    }
+  });
 
   it("counts a stopped request once a minute per reason, so a flood is not a flood of writes", async () => {
     vi.spyOn(sentOnce, "claimOnce").mockResolvedValueOnce(true).mockResolvedValueOnce(false);

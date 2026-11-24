@@ -27,8 +27,9 @@ describe("linkAuthUser", () => {
   });
 
   it("reports a failed update", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const s = service({ message: "boom" });
     expect(await linkAuthUser(s.client, { id: "d1", auth_user_id: "old" }, "u1")).toBe(false);
+    expect(log).toHaveBeenCalledWith("[auth/link] auth_user_id link failed", { message: "boom" });
   });
 });

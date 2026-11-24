@@ -39,10 +39,10 @@ describe("POST /api/admin/pending-signups/[id]", () => {
     const text = url.searchParams.get("text")!;
     expect(text).toContain("مرحبًا د. سارة");
     const token = /\/signup\?resume=([\w-]+)/.exec(text)![1];
-    const update = db.argsOf("pending_signups", "update")[0][0] as { resume_token_hash: string; reminded_at: string };
+    const update = db.argsOf("pending_signups", "update")[0]![0] as { resume_token_hash: string; reminded_at: string };
     expect(update.resume_token_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(update.resume_token_hash).not.toContain(token);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ action: "unfinished_signup_reminded", actor_doctor_id: "admin-1" });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ action: "unfinished_signup_reminded", actor_doctor_id: "admin-1" });
   });
 
   it("has nothing to remind for a returning phone's sign-in attempt, or a deleted signup", async () => {
@@ -61,7 +61,7 @@ describe("DELETE /api/admin/pending-signups/[id]", () => {
     db.queue("pending_signups", { data: { payload: { arabic_first_name: "سارة" } } });
     expect((await discard()).status).toBe(200);
     expect(db.argsOf("pending_signups", "eq")).toContainEqual(["id", ID]);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ action: "unfinished_signup_deleted", metadata: { name: "سارة" } });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ action: "unfinished_signup_deleted", metadata: { name: "سارة" } });
   });
 
   it("refuses a non-admin", async () => {
@@ -97,9 +97,9 @@ describe("pending signups: edges", () => {
     const r = await route();
     db.queue("pending_signups", { data: { phone_e164: "+972521234567", payload: { resume_form: {} } } });
     expect((await r.POST(jsonRequest("/x", {}), ctx())).status).toBe(200);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ metadata: { name: null } });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ metadata: { name: null } });
     db.queue("pending_signups", { data: { payload: {} } });
     expect((await r.DELETE(jsonRequest("/x", {}), ctx())).status).toBe(200);
-    expect(db.argsOf("audit_logs", "insert")[1][0]).toMatchObject({ metadata: { name: null } });
+    expect(db.argsOf("audit_logs", "insert")[1]![0]).toMatchObject({ metadata: { name: null } });
   });
 });

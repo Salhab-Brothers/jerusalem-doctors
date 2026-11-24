@@ -28,7 +28,7 @@ describe("doctorVCard", () => {
   });
 
   it("escapes separators and skips what is missing", () => {
-    const v = doctorVCard({ ...doc, email: null, phone_e164: null, workplaces: [{ ...doc.workplaces[1], name: "مستشفى; أ, ب" }] });
+    const v = doctorVCard({ ...doc, email: null, phone_e164: null, workplaces: [{ ...doc.workplaces[1]!, name: "مستشفى; أ, ب" }] });
     expect(v).toContain("ORG;CHARSET=UTF-8:مستشفى\\; أ\\, ب");
     expect(v).not.toContain("EMAIL");
     expect(v).not.toContain("TYPE=CELL");

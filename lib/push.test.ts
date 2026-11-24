@@ -56,7 +56,7 @@ describe("sendPushToAdmins", () => {
     const { service, eqs } = client({ data: [ROW("1"), ROW("2")] });
     await sendPushToAdmins(service, MESSAGE);
     expect(sendNotification).toHaveBeenCalledTimes(2);
-    const [target, body, options] = sendNotification.mock.calls[0];
+    const [target, body, options] = sendNotification.mock.calls[0]!;
     expect(target).toEqual({ endpoint: "https://push.example/1", keys: { p256dh: "p-1", auth: "a-1" } });
     expect(JSON.parse(body)).toEqual(MESSAGE);
     expect(options).toMatchObject({ vapidDetails: { publicKey: "pub", privateKey: "priv", subject: "mailto:ops@example.com" }, TTL: 3600, timeout: 5000 });
@@ -118,7 +118,7 @@ describe("sendTestPush", () => {
     expect(eqs).toEqual([["doctor_id", "admin-1"]]);
     expect(deleted).toEqual([["2"]]);
     expect(claimOnce).not.toHaveBeenCalled();
-    expect(JSON.parse(sendNotification.mock.calls[0][1])).toMatchObject({ tag: "test", url: "/admin" });
+    expect(JSON.parse(sendNotification.mock.calls[0]![1])).toMatchObject({ tag: "test", url: "/admin" });
   });
 
   it("reports no devices at all, rather than success", async () => {

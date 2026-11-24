@@ -1,11 +1,14 @@
+import { tel } from "@/test/phone";
 import { describe, expect, it } from "vitest";
 import {
   InvalidPhoneError,
   PhoneNotSmsDeliverableError,
   assertSmsDeliverable,
   formatPhoneDisplay,
+  isE164,
   isSmsDeliverable,
   normalizePhone,
+  parseE164,
   toSmsRecipient,
 } from "./phone";
 
@@ -125,28 +128,28 @@ describe("SMS deliverability (Israeli mobiles only, for now)", () => {
   });
 
   it("distinguishes a foreign region from a landline", () => {
-    expect(() => assertSmsDeliverable("+970599123456")).toThrowError(
+    expect(() => assertSmsDeliverable(tel("+970599123456"))).toThrowError(
       PhoneNotSmsDeliverableError,
     );
     try {
-      assertSmsDeliverable("+970599123456");
+      assertSmsDeliverable(tel("+970599123456"));
     } catch (e) {
       expect((e as PhoneNotSmsDeliverableError).reason).toBe("foreign_region");
     }
     try {
-      assertSmsDeliverable("+97221234567");
+      assertSmsDeliverable(tel("+97221234567"));
     } catch (e) {
       expect((e as PhoneNotSmsDeliverableError).reason).toBe("not_mobile");
     }
   });
 
   it("converts an Israeli mobile to the provider's local form", () => {
-    expect(toSmsRecipient("+972501234567")).toBe("0501234567");
-    expect(toSmsRecipient("+972531234567")).toBe("0531234567");
+    expect(toSmsRecipient(tel("+972501234567"))).toBe("0501234567");
+    expect(toSmsRecipient(tel("+972531234567"))).toBe("0531234567");
   });
 
   it("refuses to reshape a number it cannot deliver to", () => {
-    expect(() => toSmsRecipient("+970599123456")).toThrowError(
+    expect(() => toSmsRecipient(tel("+970599123456"))).toThrowError(
       PhoneNotSmsDeliverableError,
     );
   });
@@ -162,5 +165,24 @@ describe("maskPhone", () => {
   it("leaves something too short to mask alone", async () => {
     const { maskPhone } = await import("./phone");
     expect(maskPhone("+97250")).toBe("+97250");
+  });
+});
+
+describe("E164", () => {
+  it("is a plus, a country code that does not start with 0, and 7 to 15 digits in all", () => {
+    for (const ok of ["+972501234567", "+14155552671", "+442071838750", "+1234567", "+123456789012345"]) {
+      expect(isE164(ok), ok).toBe(true);
+      expect(parseE164(ok)).toBe(ok);
+    }
+    for (const bad of ["", "972501234567", "0501234567", "+0501234567", "+972 50 123 4567", "+972-50-1234567", "+12345", "+1234567890123456", " +972501234567", "+972501234567\n", "+97250123456a", "+٩٧٢٥٠١٢٣٤٥٦٧"]) {
+      expect(isE164(bad), JSON.stringify(bad)).toBe(false);
+      expect(() => parseE164(bad), JSON.stringify(bad)).toThrow(InvalidPhoneError);
+    }
+  });
+
+  it("is what normalizePhone returns, for every way a person writes it", () => {
+    for (const typed of ["050-123-4567", "0501234567", "+972 50 123 4567", "972501234567", "(050) 123.4567"]) {
+      expect(isE164(normalizePhone(typed)), typed).toBe(true);
+    }
   });
 });

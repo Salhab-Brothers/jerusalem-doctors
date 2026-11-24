@@ -115,8 +115,10 @@ export async function sendPushToAdmins(
     const first = (await nextTurn("push-turn:" + message.tag)) % admins.length;
     for (let i = 0; i < admins.length; i++) {
       const admin = admins[(first + i) % admins.length];
+      const subscriptions = admin === undefined ? undefined : byAdmin.get(admin);
+      if (admin === undefined || !subscriptions) continue;
       if (!(await claimOnce(`push-turn:${message.tag}:${admin}`, TURN_THROTTLE_SECONDS))) continue;
-      if ((await deliver(service, keys, byAdmin.get(admin)!, message)) > 0) return;
+      if ((await deliver(service, keys, subscriptions, message)) > 0) return;
     }
   } catch (err) {
     console.error("[push] failed", (err as Error).message);

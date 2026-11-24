@@ -100,15 +100,16 @@ describe("rateLimit", () => {
 
     await rateLimit("smsDaily", "all");
     expect(ctor).toHaveBeenCalledWith(expect.objectContaining({ prefix: "rl:smsDaily", timeout: 1_500 }));
-    const fast = Redis.mock.calls[0][0];
+    const fast = Redis.mock.calls[0]![0];
     expect(fast.retry).toBe(false);
     expect(typeof fast.signal).toBe("function");
     expect(fast.signal()).toBeInstanceOf(AbortSignal);
 
     // Every other limiter keeps the library's defaults.
     await rateLimit("search", "d");
-    expect(ctor).toHaveBeenLastCalledWith(expect.objectContaining({ prefix: "rl:search", timeout: undefined }));
-    const normal = Redis.mock.calls[1][0];
+    expect(ctor).toHaveBeenLastCalledWith(expect.objectContaining({ prefix: "rl:search" }));
+    expect(ctor.mock.lastCall![0]).not.toHaveProperty("timeout");
+    const normal = Redis.mock.calls[1]![0];
     expect(normal).not.toHaveProperty("retry");
     expect(normal).not.toHaveProperty("signal");
   });

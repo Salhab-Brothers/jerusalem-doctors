@@ -303,8 +303,8 @@ describe("PATCH /api/profile: one transaction", () => {
     });
     expect(res.status).toBe(200);
     expect(rpcSpy).toHaveBeenCalledTimes(1);
-    expect(rpcSpy.mock.calls[0][0]).toBe("save_doctor_profile");
-    expect(rpcSpy.mock.calls[0][1]).toMatchObject({
+    expect(rpcSpy.mock.calls[0]![0]).toBe("save_doctor_profile");
+    expect(rpcSpy.mock.calls[0]![1]).toMatchObject({
       p_doctor_id: "doc-1",
       p_specialty_ids: ["11111111-1111-4111-8111-111111111111"],
     });
@@ -312,7 +312,7 @@ describe("PATCH /api/profile: one transaction", () => {
 
   it("leaves untouched lists out (null), so they are kept", async () => {
     await call({ bio: "نص" });
-    expect(rpcSpy.mock.calls[0][1]).toMatchObject({ p_specialty_ids: null, p_workplaces: null });
+    expect(rpcSpy.mock.calls[0]![1]).toMatchObject({ p_specialty_ids: null, p_workplaces: null });
   });
 
   it("rejects two primary workplaces before writing anything", async () => {
@@ -342,15 +342,15 @@ describe("PATCH /api/profile: one transaction", () => {
         { name: "مستشفى المقاصد", workplace_type: "hospital", is_primary: true },
       ],
     });
-    const rows = rpcSpy.mock.calls[0][1].p_workplaces as { is_primary: boolean }[];
+    const rows = rpcSpy.mock.calls[0]![1].p_workplaces as { is_primary: boolean }[];
     expect(rows).toHaveLength(1);
-    expect(rows[0].is_primary).toBe(true);
+    expect(rows[0]!.is_primary).toBe(true);
   });
 
   it("dedupes specialty ids", async () => {
     const id = "11111111-1111-4111-8111-111111111111";
     await call({ specialty_ids: [id, id] });
-    expect(rpcSpy.mock.calls[0][1].p_specialty_ids).toEqual([id]);
+    expect(rpcSpy.mock.calls[0]![1].p_specialty_ids).toEqual([id]);
   });
 });
 

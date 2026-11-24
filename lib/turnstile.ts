@@ -11,7 +11,7 @@ export interface TurnstileResult {
   ok: boolean;
   /** When the secret is unset in dev, returns ok:true with this flag set. */
   bypassed?: boolean;
-  errors?: string[];
+  errors?: string[] | undefined;
 }
 
 export async function verifyTurnstile(

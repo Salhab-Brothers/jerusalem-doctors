@@ -1,9 +1,11 @@
+import { tel } from "@/test/phone";
 import { createServer } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Sms4FreeOtpSender, fetchAvailableSms } from "./sms4free";
 
 let reply = { body: "1", status: 200 };
 let lastRequest: Record<string, string> | null = null;
+let lastHeaders: Record<string, string | string[] | undefined> = {};
 let server: ReturnType<typeof createServer>;
 let sender: Sms4FreeOtpSender;
 
@@ -13,6 +15,7 @@ beforeAll(async () => {
     req.on("data", (c) => (raw += c));
     req.on("end", () => {
       lastRequest = JSON.parse(raw);
+      lastHeaders = req.headers;
       res.writeHead(reply.status, { "Content-Type": "application/json" });
       res.end(reply.body);
     });
@@ -30,7 +33,7 @@ beforeAll(async () => {
 
 afterAll(() => server.close());
 
-const send = () => sender.send("+972501234567", "012345");
+const send = () => sender.send(tel("+972501234567"), "012345");
 
 describe("Sms4FreeOtpSender over HTTP", () => {
   it("accepts status 1 and sends the right payload", async () => {
@@ -95,7 +98,7 @@ describe("Sms4FreeOtpSender over HTTP", () => {
 
   it("refuses a +970 number without touching the network", async () => {
     lastRequest = null;
-    await expect(sender.send("+970599123456", "012345")).rejects.toMatchObject({
+    await expect(sender.send(tel("+970599123456"), "012345")).rejects.toMatchObject({
       permanent: true,
     });
     expect(lastRequest).toBeNull();
@@ -128,5 +131,73 @@ describe("fetchAvailableSms", () => {
   it("does not report a balance from an unparseable body", async () => {
     reply = { body: "<html>oops</html>", status: 200 };
     await expect(fetchAvailableSms()).rejects.toThrow(/unparseable/);
+  });
+});
+
+describe("the provider's answers, edge by edge", () => {
+  const status = (code: number) => ({ body: String(code), status: 200 });
+
+  it("maps every documented status to its label and to permanent or retryable", async () => {
+    const table: [number, boolean, string][] = [
+      [0, false, "general provider error"],
+      [-1, true, "invalid key, user or password"],
+      [-2, true, "invalid sender id"],
+      [-3, true, "no recipients"],
+      [-4, true, "insufficient message balance"],
+      [-5, true, "message content rejected"],
+      [-6, true, "sender number not verified"],
+    ];
+    for (const [code, permanent, label] of table) {
+      reply = status(code);
+      await expect(send(), String(code)).rejects.toMatchObject({
+        permanent,
+        reason: `sms4free_status_${code}`,
+        message: expect.stringContaining(label),
+      });
+    }
+  });
+
+  it("keeps an undocumented status retryable and says so", async () => {
+    reply = { body: '{"status":-9,"message":"new code"}', status: 200 };
+    await expect(send()).rejects.toMatchObject({ permanent: false, reason: "sms4free_status_-9", message: expect.stringContaining("new code") });
+    reply = status(-9);
+    await expect(send()).rejects.toMatchObject({ permanent: false, message: expect.stringContaining("unknown status") });
+    await expect(fetchAvailableSms()).rejects.toMatchObject({ permanent: false, message: expect.stringContaining("unknown status") });
+  });
+
+  it("treats an empty or blank body as unreadable, never as the general error", async () => {
+    for (const body of ["", "   ", "\n"]) {
+      reply = { body, status: 200 };
+      await expect(send(), JSON.stringify(body)).rejects.toMatchObject({ permanent: false, reason: "sms4free_unreadable" });
+      await expect(fetchAvailableSms(), JSON.stringify(body)).rejects.toMatchObject({ permanent: false, message: expect.stringContaining("unparseable") });
+    }
+  });
+
+  it("is permanent for HTTP 400 to 499 only, for a send and for the balance check", async () => {
+    for (const [code, permanent] of [[400, true], [404, true], [499, true], [304, false], [500, false], [503, false]] as const) {
+      reply = { body: "x", status: code };
+      await expect(send(), `send ${code}`).rejects.toMatchObject({ permanent, reason: `sms4free_http_${code}` });
+      await expect(fetchAvailableSms(), `balance ${code}`).rejects.toMatchObject({ permanent });
+    }
+  });
+
+  it("sends and reads the balance as JSON", async () => {
+    reply = { body: "1", status: 200 };
+    await send();
+    expect(lastHeaders["content-type"]).toBe("application/json");
+    lastHeaders = {};
+    reply = { body: "5", status: 200 };
+    await fetchAvailableSms();
+    expect(lastHeaders["content-type"]).toBe("application/json");
+  });
+
+  it("needs all three credentials to read the balance, as a permanent configuration error", async () => {
+    const key = process.env.SMS4FREE_KEY;
+    delete process.env.SMS4FREE_KEY;
+    try {
+      await expect(fetchAvailableSms()).rejects.toMatchObject({ permanent: true, message: expect.stringContaining("missing env") });
+    } finally {
+      process.env.SMS4FREE_KEY = key;
+    }
   });
 });

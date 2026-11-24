@@ -24,9 +24,9 @@ describe("PATCH /api/admin/reports/[id]", () => {
   it("closes an open report with the admin's note and logs it", async () => {
     db.queue("profile_reports", { data: { target_doctor_id: "d1" } });
     expect((await call({ note: "تواصلت مع الطبيب، الملف صحيح" })).status).toBe(200);
-    expect(db.argsOf("profile_reports", "update")[0][0]).toMatchObject({ resolved_by: "admin-1", resolution_note: "تواصلت مع الطبيب، الملف صحيح" });
+    expect(db.argsOf("profile_reports", "update")[0]![0]).toMatchObject({ resolved_by: "admin-1", resolution_note: "تواصلت مع الطبيب، الملف صحيح" });
     expect(db.argsOf("profile_reports", "is")).toEqual([["resolved_at", null]]);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ action: "profile_report_resolved", target_doctor_id: "d1" });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ action: "profile_report_resolved", target_doctor_id: "d1" });
   });
 
   it("refuses a non-admin, a missing note, and a report already closed", async () => {

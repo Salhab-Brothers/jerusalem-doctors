@@ -3,6 +3,7 @@
 // DELETE removes it; its workplaces fall back to unlinked (on delete set null).
 // Both re-link every workplace and write to the audit log.
 
+import { withoutUndefined } from "@/lib/withoutUndefined";
 import { z } from "zod";
 import { jsonError, jsonOk, withJsonErrors, zodFields } from "@/lib/api/respond";
 import { writeAudit } from "@/lib/audit";
@@ -44,7 +45,7 @@ export const PATCH = withJsonErrors(async (req: Request, ctx: Ctx) => {
   const body = parsed.data;
   // A field left out of the body stays as it is (undefined is not sent).
   const update: TablesUpdate<"institutions"> =
-    "add_alias" in body ? { aliases: [...new Set([...found.data.aliases, body.add_alias])] } : body;
+    "add_alias" in body ? { aliases: [...new Set([...found.data.aliases, body.add_alias])] } : withoutUndefined(body);
   const r = await service.from("institutions").update(update).eq("id", id);
   if (r.error) {
     if (r.error.code === "23505") {

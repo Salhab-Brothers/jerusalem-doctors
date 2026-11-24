@@ -22,14 +22,14 @@ describe("buildWhatsAppLink", () => {
   it("uses the Arabic default greeting when no text argument is passed", () => {
     const url = buildWhatsAppLink("+972501234567");
     expect(url).toContain("https://wa.me/972501234567?text=");
-    expect(decodeURIComponent(url.split("text=")[1])).toBe(
+    expect(decodeURIComponent(url.split("text=")[1]!)).toBe(
       DEFAULT_WHATSAPP_PREFILLED,
     );
   });
 
   it("URL-encodes Arabic correctly", () => {
     const url = buildWhatsAppLink("+972501234567", "السلام عليكم");
-    const decoded = decodeURIComponent(url.split("text=")[1]);
+    const decoded = decodeURIComponent(url.split("text=")[1]!);
     expect(decoded).toBe("السلام عليكم");
     // ensure each Arabic byte was percent-encoded
     expect(url.split("text=")[1]).toMatch(/^(%[0-9A-F]{2})+$/);

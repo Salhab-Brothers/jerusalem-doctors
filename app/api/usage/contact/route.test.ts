@@ -33,7 +33,7 @@ describe("POST /api/usage/contact", () => {
   it("records the channel, the viewer and the colleague", async () => {
     const res = await post({ target: TARGET, channel: "whatsapp" });
     expect(res.status).toBe(204);
-    expect(db.argsOf("usage_events", "insert")[0][0]).toEqual({
+    expect(db.argsOf("usage_events", "insert")[0]![0]).toEqual({
       kind: "contact_whatsapp",
       doctor_id: "me",
       meta: { target: TARGET },

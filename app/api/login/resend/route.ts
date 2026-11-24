@@ -12,7 +12,7 @@ import { after } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { ipFromHeaders, jsonError, jsonOk } from "@/lib/api/respond";
-import { InvalidPhoneError, normalizePhone } from "@/lib/normalize/phone";
+import { InvalidPhoneError, normalizePhone, type E164 } from "@/lib/normalize/phone";
 import { failureReason, recordStopped } from "@/lib/otp/failure";
 import { rejectUndeliverablePhone, rejectWhilePhoneAuthDisabled } from "@/lib/otp/phone_gate";
 import { rateLimit } from "@/lib/ratelimit";
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     return jsonError(403, { error: "turnstile_failed", code: "turnstile_failed" });
   }
 
-  let phoneE164: string;
+  let phoneE164: E164;
   try {
     phoneE164 = normalizePhone(parsed.phone);
   } catch (e) {

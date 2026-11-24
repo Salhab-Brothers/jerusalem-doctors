@@ -171,10 +171,32 @@ describe("lib/auth/session", () => {
       await expect((await session()).getCurrentDoctor()).rejects.toEqual({ message: "boom" });
     });
 
+    it.each(["", "0", "true", "yes"])("stays off unless USE_DEV_USER is exactly 1 (not %j), whatever DEV_DOCTOR_ID says", async (value) => {
+      vi.stubEnv("USE_DEV_USER", value);
+      expect(await (await session()).getCurrentDoctor()).toBeNull();
+      expect(auth.getClaims).toHaveBeenCalled();
+      expect(db.argsOf("doctors", "eq")).toEqual([]);
+    });
+
     it("stays off without DEV_DOCTOR_ID", async () => {
       vi.stubEnv("DEV_DOCTOR_ID", "");
       expect(await (await session()).getCurrentDoctor()).toBeNull();
       expect(auth.getClaims).toHaveBeenCalled();
+    });
+
+    it.each([
+      ["in production, with the shim unset", "production", ""],
+      ["in production, with the shim off", "production", "0"],
+      ["outside production, with the shim on", "test", "1"],
+      ["in development, with the shim on", "development", "1"],
+    ])("says nothing at load %s", async (_, nodeEnv, flag) => {
+      vi.stubEnv("NODE_ENV", nodeEnv);
+      vi.stubEnv("USE_DEV_USER", flag);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.resetModules();
+      await session();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
     });
 
     it("is ignored in production, with a warning at load", async () => {

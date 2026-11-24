@@ -15,6 +15,18 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/await-thenable": "error",
     },
   },
+  // A type assertion (`x as T`) tells the compiler something it cannot check, so
+  // a wrong one is a bug the types then hide. Production code states the type
+  // another way: a zod schema or a type guard for what comes from outside, a
+  // generic or a better type for what we build. `as const` and `satisfies` are
+  // fine. The assertions that were here when this rule arrived are recorded in
+  // eslint-suppressions.json and tolerated; a new one fails the lint. Fixing one
+  // makes ESLint ask for `npx eslint --prune-suppressions`, which shrinks the list.
+  {
+    files: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "proxy.ts"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: { "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }] },
+  },
   // Who is in the directory is the `listed_doctors` view (#158): the five
   // conditions are written once, in the database. Reading the doctors table
   // directly in code that serves doctors would skip them, so only the code
@@ -64,6 +76,8 @@ const eslintConfig = defineConfig([
     ".worktrees/**",
     ".claude/worktrees/**",
     "coverage/**",
+    // A mutation run's sandbox copy of the code, left behind if the run is interrupted.
+    ".stryker-tmp/**",
   ]),
 ]);
 

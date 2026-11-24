@@ -19,6 +19,7 @@
 
 /** Addresses allowed to sign in with a password, lowercased. */
 export function devLoginEmails(raw: string | undefined = process.env.DEV_LOGIN_EMAILS): string[] {
+  // Stryker disable Regex,MethodExpression: a doubled separator leaves an empty item, which the filter drops, and the split on whitespace has already removed what trim() would
   return (raw ?? "")
     .split(/[,\s]+/)
     .map((e) => e.trim().toLowerCase())

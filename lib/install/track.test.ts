@@ -17,8 +17,8 @@ describe("trackInstall", () => {
   it("sends one beacon for a signed-in doctor", () => {
     trackInstall("install_clicked" as never, "card");
     expect(sendBeacon).toHaveBeenCalledTimes(1);
-    expect(sendBeacon.mock.calls[0][0]).toBe("/api/usage/install");
-    expect(JSON.parse(sendBeacon.mock.calls[0][1])).toMatchObject({ kind: "install_clicked", source: "card" });
+    expect(sendBeacon.mock.calls[0]![0]).toBe("/api/usage/install");
+    expect(JSON.parse(sendBeacon.mock.calls[0]![1])).toMatchObject({ kind: "install_clicked", source: "card" });
   });
 
   it("sends nothing for a visitor", () => {

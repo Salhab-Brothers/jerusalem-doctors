@@ -203,6 +203,17 @@ describe("send-otp hook route", () => {
     expect(res.headers.get("content-type")).toContain("application/json");
   });
 
+  it("answers 400, and sends and looks up nothing, for a phone that is not in E.164 form even when signed", async () => {
+    const { POST } = await import("./route");
+    for (const phone of ["abc", "0501234567", "+0501234567", "+972 50 123"]) {
+      send.mockClear();
+      const res = await POST(hookRequest({ user: { phone }, sms: { otp: String(++codes) } }));
+      expect(res.status, phone).toBe(400);
+      expect(res.headers.get("content-type")).toContain("application/json");
+      expect(send).not.toHaveBeenCalled();
+    }
+  });
+
   it("answers 400 without retry on a permanent provider failure", async () => {
     send.mockRejectedValue(new OtpProviderError("bad sender", true, undefined, "sms4free_status_-4"));
     const { POST } = await import("./route");

@@ -89,9 +89,9 @@ test.describe("residents the registry lists as specialists", () => {
     const licenceOf = new Map((rows ?? []).map((r) => [r.id, Number(r.license_number)]));
     licences = [...licenceOf.values()];
     const registry = [
-      { id: made[0].id, specialty: "פנימית" },
-      { id: made[1].id, specialty: null },
-      { id: made[2].id, specialty: "ילדים" },
+      { id: made[0]!.id, specialty: "פנימית" },
+      { id: made[1]!.id, specialty: null },
+      { id: made[2]!.id, specialty: "ילדים" },
     ].map(({ id, specialty }) => ({
       license_number: licenceOf.get(id),
       hebrew_first_name: "בדיקה",

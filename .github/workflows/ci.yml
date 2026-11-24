@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -61,10 +61,10 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -112,10 +112,10 @@ jobs:
             browsers: chromium
             first: false
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
         with:
           version: 2.121.0
       # The Docker images (Supabase's and Redis's) come from our own Actions
@@ -129,7 +129,7 @@ jobs:
         run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - name: Restore Docker images
         id: images-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/images.tar
           key: docker-images-supabase-2.121.0-${{ steps.images.outputs.day }}
@@ -144,7 +144,7 @@ jobs:
             if [ -f "$RUNNER_TEMP/images.tar" ]; then docker load -q -i "$RUNNER_TEMP/images.tar"; fi && mark "docker load" \
             && supabase start -x studio,realtime,edge-runtime,logflare,vector,imgproxy,mailpit,postgres-meta,supavisor && mark "supabase start" \
             && supabase seed buckets && mark "seed buckets"; echo $? > "$RUNNER_TEMP/supabase.exit") > "$RUNNER_TEMP/supabase.log" 2>&1 &
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -156,7 +156,7 @@ jobs:
         id: os
         run: echo "image=$ImageOS" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.os.outputs.image }}-${{ matrix.browsers }}-${{ hashFiles('package-lock.json') }}
@@ -181,13 +181,13 @@ jobs:
       # images above), so branches do not fill the repository's cache quota.
       - name: Restore Next's build cache
         id: next-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .next/cache
           key: next-cache-${{ hashFiles('package-lock.json') }}-${{ steps.images.outputs.day }}
           restore-keys: next-cache-${{ hashFiles('package-lock.json') }}-
       - run: npm run build
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.first && github.event_name == 'push' && steps.next-cache.outputs.cache-hit != 'true'
         with:
           path: .next/cache
@@ -221,7 +221,7 @@ jobs:
       - name: Save today's Docker images
         if: matrix.first && github.event_name == 'push' && steps.images-cache.outputs.cache-hit != 'true'
         run: docker save -o "$RUNNER_TEMP/images.tar" $(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.first && github.event_name == 'push' && steps.images-cache.outputs.cache-hit != 'true'
         with:
           path: ${{ runner.temp }}/images.tar
@@ -233,7 +233,7 @@ jobs:
       - name: Timing summary
         if: always()
         run: node scripts/e2e-timing.mjs >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: playwright-report-${{ matrix.slug }}

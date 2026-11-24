@@ -269,7 +269,7 @@ describe("POST /api/signup/start: a phone that already has an account", () => {
     const fresh = await start({ license_number: "123456" });
 
     expect(existing).toEqual(fresh);
-    expect(pendingInserts[0].payload).toEqual({
+    expect(pendingInserts[0]!.payload).toEqual({
       phone_e164: "+972501234567",
       existing_doctor_id: "doc-1",
     });
@@ -366,7 +366,7 @@ describe("POST /api/signup/start: old unfinished signups", () => {
     const r = await start({ license_number: "23456" });
     expect(r.status).toBe(200);
     expect(purges).toHaveLength(1);
-    const [col, cutoff] = purges[0];
+    const [col, cutoff] = purges[0]!;
     expect(col).toBe("created_at");
     const DAY = 86_400_000;
     expect(Date.parse(cutoff)).toBeGreaterThanOrEqual(before - 30 * DAY - 1000);

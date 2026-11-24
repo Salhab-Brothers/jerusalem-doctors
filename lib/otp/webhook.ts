@@ -6,6 +6,7 @@
 // Hand-rolled rather than pulling the `standardwebhooks` package, matching how
 // lib/turnstile.ts talks to Cloudflare with a raw fetch and no SDK.
 
+import { parseInteger } from "@/lib/parse/number";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** Reject timestamps further than this from now, in either direction. */
@@ -49,8 +50,8 @@ export function verifySendSmsHook(
   const signatureHeader = headers.get("webhook-signature");
   if (!id || !timestamp || !signatureHeader || !secret) return false;
 
-  const ts = Number(timestamp);
-  if (!Number.isFinite(ts)) return false;
+  const ts = parseInteger(timestamp);
+  if (ts === null) return false;
   if (Math.abs(nowMs / 1000 - ts) > TOLERANCE_SECONDS) return false;
 
   const key = parseHookSecret(secret);
@@ -64,6 +65,7 @@ export function verifySendSmsHook(
   // key rotation. Any one matching is a pass.
   for (const entry of signatureHeader.split(" ")) {
     const comma = entry.indexOf(",");
+    // Stryker disable next-line ConditionalExpression,UnaryOperator: an entry with no comma can never equal the 44-character signature
     if (comma === -1) continue;
     if (entry.slice(0, comma) !== "v1") continue;
     if (constantTimeEquals(entry.slice(comma + 1), expected)) return true;

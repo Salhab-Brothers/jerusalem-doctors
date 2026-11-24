@@ -11,10 +11,11 @@
 // number (the signup form accepts a phone that already has an account) does
 // not make it a recipient.
 
+import type { E164 } from "@/lib/normalize/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Throws when the database cannot answer; the hook then fails closed. */
-export async function isKnownRecipient(service: SupabaseClient, e164: string): Promise<boolean> {
+export async function isKnownRecipient(service: SupabaseClient, e164: E164): Promise<boolean> {
   const [doctor, pending] = await Promise.all([
     service.from("doctors").select("id, is_admin").eq("phone_e164", e164).eq("is_active", true).limit(1).maybeSingle(),
     service

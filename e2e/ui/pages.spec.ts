@@ -46,7 +46,7 @@ for (const scheme of ["light", "dark"] as const) {
         test.use({ ...device, colorScheme: scheme, storageState: who === "visitor" ? { cookies: [], origins: [] } : stateFile(who) });
         for (const [rawPath] of PAGES.filter(([, w]) => w === who)) {
           test(rawPath, async ({ page }, testInfo) => {
-            const path = rawPath.replace(":mariam", seededIds().mariam);
+            const path = rawPath.replace(":mariam", seededIds().mariam!);
             const res = await page.goto(path);
             expect(res?.status(), path).toBeLessThan(400);
             // Not networkidle: the Turnstile widget on /login keeps polling.

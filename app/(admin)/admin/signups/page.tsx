@@ -59,7 +59,7 @@ export default async function UnfinishedSignupsPage() {
       name: [p.arabic_first_name, p.arabic_family_name].filter(Boolean).join(" ") || "بلا اسم",
       phone: formatPhoneDisplay(r.phone_e164),
       license: p.license_number ?? "",
-      licenseLabel: licenseDisplay({ status: p.license_verification_status, region: p.license_region }).label,
+      licenseLabel: licenseDisplay({ status: p.license_verification_status, region: p.license_region ?? null }).label,
       specialties: (p.specialty_ids ?? []).map((id) => specialtyName.get(id)).filter((n): n is string => Boolean(n)),
       started: auditTime(r.created_at),
       reminded: r.reminded_at ? auditTime(r.reminded_at) : null,

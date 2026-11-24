@@ -2,6 +2,7 @@ import { jsonError } from "@/lib/api/respond";
 import {
   PhoneNotSmsDeliverableError,
   assertSmsDeliverable,
+  type E164,
 } from "@/lib/normalize/phone";
 import type { NextResponse } from "next/server";
 import { isPhoneAuthDisabled } from "@/lib/auth/session";
@@ -29,7 +30,7 @@ export function rejectWhilePhoneAuthDisabled(): NextResponse | null {
  * 400 here reveals nothing an attacker could use to enumerate members, which
  * is why /login/resend can call it despite answering 200 to everything else.
  */
-export function rejectUndeliverablePhone(e164: string): NextResponse | null {
+export function rejectUndeliverablePhone(e164: E164): NextResponse | null {
   try {
     assertSmsDeliverable(e164);
     return null;

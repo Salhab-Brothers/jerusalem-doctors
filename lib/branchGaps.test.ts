@@ -33,8 +33,8 @@ describe("directory edges", () => {
   const wp = (name: string, is_primary: boolean, sort_order: number) => ({ name, workplace_type: "clinic", is_primary, sort_order });
   it("puts a primary workplace first whichever side of the comparison it is on", () => {
     const row = (list: unknown[]) => ({ id: "d", arabic_first_name: "أ", arabic_family_name: "ب", phone_e164: "", doctor_specialties: [], doctor_workplaces: list });
-    expect(toSearchHits([row([wp("ثانوي", false, 1), wp("رئيسي", true, 2)])])[0].workplaces[0].name).toBe("رئيسي");
-    expect(toSearchHits([row([wp("رئيسي", true, 2), wp("ثانوي", false, 1)])])[0].workplaces[0].name).toBe("رئيسي");
+    expect(toSearchHits([row([wp("ثانوي", false, 1), wp("رئيسي", true, 2)])])[0]!.workplaces[0]!.name).toBe("رئيسي");
+    expect(toSearchHits([row([wp("رئيسي", true, 2), wp("ثانوي", false, 1)])])[0]!.workplaces[0]!.name).toBe("رئيسي");
   });
 
   it("scores a colleague whose specialty has no known domain as no match", () => {
@@ -85,6 +85,6 @@ describe("audit text fallbacks", () => {
   });
 
   it("names edited fields it has no label for", () => {
-    expect(auditFields({ action: "x", metadata: { fields: ["mystery_field"] } } as never, none)[0].value).toBe("mystery_field");
+    expect(auditFields({ action: "x", metadata: { fields: ["mystery_field"] } } as never, none)[0]!.value).toBe("mystery_field");
   });
 });

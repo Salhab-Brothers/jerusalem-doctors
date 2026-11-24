@@ -145,7 +145,7 @@ it("leaves another admin's licence to a super admin", async () => {
       license_region: "IL",
       license_verification_status: "verified",
     });
-    expect(typeof updates[0].license_verified_at).toBe("string");
+    expect(typeof updates[0]!.license_verified_at).toBe("string");
   });
 
   it("logs the correction as before and after", async () => {
@@ -171,7 +171,7 @@ it("leaves another admin's licence to a super admin", async () => {
     expect(res.status).toBe(200);
     expect(updates[0]).toMatchObject({ license_verification_status: "verified" });
     expect(audits[0]).toMatchObject({ action: "admin_license_rechecked" });
-    expect(audits[0].metadata).not.toHaveProperty("license_number_before");
+    expect(audits[0]!.metadata).not.toHaveProperty("license_number_before");
   });
 
   it("writes nothing when neither the number nor the verdict changed", async () => {
@@ -211,7 +211,7 @@ it("leaves another admin's licence to a super admin", async () => {
     expect(res.status).toBe(200);
     expect(updates[0]).toMatchObject({ license_verification_status: "name_mismatch_overridden" });
     // Not verified and not a soft match, so no verification timestamp.
-    expect(updates[0].license_verified_at).toBeNull();
+    expect(updates[0]!.license_verified_at).toBeNull();
     expect(audits[0]).toMatchObject({
       metadata: { override_name_mismatch: true, reason: "راجعت صورة الترخيص" },
     });
@@ -466,14 +466,14 @@ describe("POST .../license/save: a number found by name", () => {
   it("is not marked when the admin typed it", async () => {
     mirrorRows = [MIRROR];
     await call({ slot: "primary", license_number: "189371" });
-    expect(audits[0].metadata).not.toHaveProperty("via_name_lookup");
+    expect(audits[0]!.metadata).not.toHaveProperty("via_name_lookup");
   });
 
   it("is not marked on a recheck of the number already stored", async () => {
     doctor = { ...DOCTOR, license_number: "189371" };
     mirrorRows = [MIRROR];
     await call({ slot: "primary", license_number: "189371", source: "name_lookup" });
-    expect(audits[0].metadata).not.toHaveProperty("via_name_lookup");
+    expect(audits[0]!.metadata).not.toHaveProperty("via_name_lookup");
   });
 
   it("refuses any other source", async () => {

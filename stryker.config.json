@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "mutate": [
+    "lib/auth/**/*.ts",
+    "lib/otp/**/*.ts",
+    "lib/security/**/*.ts",
+    "lib/api/**/*.ts",
+    "lib/signup/**/*.ts",
+    "lib/parse/**/*.ts",
+    "lib/withoutUndefined.ts",
+    "proxy.ts",
+    "!**/*.test.ts"
+  ],
+  "mutator": { "excludedMutations": ["StringLiteral"] },
+    "reporters": ["clear-text", "html", "json"],
+  "clearTextReporter": { "reportScoreTable": true, "skipFull": true, "maxTestsToLog": 0, "allowColors": false },
+  "thresholds": { "high": 98, "low": 96, "break": 95 },
+  "ignorePatterns": [".next", ".worktrees", "coverage", ".env*", ".local-secrets", ".claude"],
+  "tempDirName": ".stryker-tmp",
+  "timeoutMS": 10000
+}

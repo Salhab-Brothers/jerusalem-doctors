@@ -110,8 +110,8 @@ export function WorkplaceEditor({
    *  last row (the one every form starts with) takes the type instead of
    *  leaving an empty row above the new one. */
   const add = (type: WorkplaceType) => {
-    const last = workplaces.length - 1;
-    if (last >= 0 && !workplaces[last].name.trim()) return setType(last, type);
+    const last = workplaces.at(-1);
+    if (last && !last.name.trim()) return setType(workplaces.length - 1, type);
     onChange([...workplaces, emptyWorkplace(workplaces.length === 0, type)]);
   };
 

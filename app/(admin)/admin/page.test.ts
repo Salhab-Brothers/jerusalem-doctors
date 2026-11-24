@@ -238,25 +238,25 @@ describe("/admin doctor panel", () => {
   it("steps to the doctors either side in the list, and keeps the filter", async () => {
     DATA.doctors = ROWS;
     DATA.doctor_detail = ROWS[1];
-    const html = await render({ status: "pending", doctor: ROWS[1].id });
-    expect(href(html, "السابق")).toContain(`doctor=${ROWS[0].id}`);
-    expect(href(html, "التالي")).toContain(`doctor=${ROWS[2].id}`);
+    const html = await render({ status: "pending", doctor: ROWS[1]!.id });
+    expect(href(html, "السابق")).toContain(`doctor=${ROWS[0]!.id}`);
+    expect(href(html, "التالي")).toContain(`doctor=${ROWS[2]!.id}`);
     expect(href(html, "التالي")).toContain("status=pending");
   });
 
   it("has nothing before the very first doctor and nothing after the very last", async () => {
     DATA.doctors = ROWS;
     DATA.doctor_detail = ROWS[0];
-    expect(href(await render({ doctor: ROWS[0].id }), "السابق")).toBeUndefined();
+    expect(href(await render({ doctor: ROWS[0]!.id }), "السابق")).toBeUndefined();
     // The mock counts 60 doctors, 3 pages: the last page's last row is the end.
     DATA.doctor_detail = ROWS[2];
-    expect(href(await render({ page: "3", doctor: ROWS[2].id }), "التالي")).toBeUndefined();
+    expect(href(await render({ page: "3", doctor: ROWS[2]!.id }), "التالي")).toBeUndefined();
   });
 
   it("goes on to the next page from the last row of one, and back from the first", async () => {
     DATA.doctors = ROWS;
     DATA.doctor_detail = ROWS[2];
-    const next = href(await render({ doctor: ROWS[2].id }), "التالي") ?? "";
+    const next = href(await render({ doctor: ROWS[2]!.id }), "التالي") ?? "";
     expect(next).toContain("page=2");
     expect(next).toContain("doctor=");
     // The row just past the page is looked up by its place in the list: 25 rows a page, so index 25.
@@ -265,7 +265,7 @@ describe("/admin doctor panel", () => {
 
     calls.length = 0;
     DATA.doctor_detail = ROWS[0];
-    const prev = href(await render({ page: "2", doctor: ROWS[0].id }), "السابق") ?? "";
+    const prev = href(await render({ page: "2", doctor: ROWS[0]!.id }), "السابق") ?? "";
     // Page 1 is the default, so it is not in the address.
     expect(prev).toMatch(/^\/admin\?doctor=/);
     expect(prev).not.toContain("page=");
@@ -275,7 +275,7 @@ describe("/admin doctor panel", () => {
   it("looks up nothing beyond the page while the open doctor is mid-page", async () => {
     DATA.doctors = ROWS;
     DATA.doctor_detail = ROWS[1];
-    await render({ doctor: ROWS[1].id });
+    await render({ doctor: ROWS[1]!.id });
     const ranges = calls.filter((c) => c.table === "doctors" && c.method === "range").map((c) => c.args);
     expect(ranges).toEqual([[0, 24]]);
   });
@@ -283,15 +283,15 @@ describe("/admin doctor panel", () => {
   it("says where the open doctor is in the list", async () => {
     DATA.doctors = ROWS;
     DATA.doctor_detail = ROWS[1];
-    expect(await render({ page: "2", doctor: ROWS[1].id })).toContain("27 من 60");
+    expect(await render({ page: "2", doctor: ROWS[1]!.id })).toContain("27 من 60");
   });
 
   it("goes on to the first of the list once the open doctor has left it", async () => {
     // Accepted from the waiting list: the refreshed list no longer holds them.
     DATA.doctors = ROWS.slice(1);
     DATA.doctor_detail = ROWS[0];
-    const html = await render({ status: "pending", doctor: ROWS[0].id });
-    expect(href(html, "التالي")).toContain(`doctor=${ROWS[1].id}`);
+    const html = await render({ status: "pending", doctor: ROWS[0]!.id });
+    expect(href(html, "التالي")).toContain(`doctor=${ROWS[1]!.id}`);
     expect(href(html, "السابق")).toBeUndefined();
   });
 

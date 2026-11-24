@@ -1,4 +1,5 @@
-import { PhoneNotSmsDeliverableError, toSmsRecipient } from "@/lib/normalize/phone";
+import { jsonNumber, parseInteger } from "@/lib/parse/number";
+import { PhoneNotSmsDeliverableError, toSmsRecipient, type E164 } from "@/lib/normalize/phone";
 import { deliveryUrl, newMessageId } from "./delivery";
 import { buildOtpMessage, originHostFromEnv } from "./message";
 import {
@@ -90,28 +91,21 @@ export function buildSendPayload(
  * Returns null when the body is neither, see the caller for why that is
  * deliberately not treated as a failed send.
  */
-function bareInteger(trimmed: string): number | null {
-  if (!trimmed) return null;
-  const n = Number(trimmed);
-  return Number.isInteger(n) ? n : null;
-}
-
 export function parseSendResponse(
   raw: string,
-): { status: number; message?: string } | null {
+): { status: number; message?: string | undefined } | null {
   const trimmed = raw.trim();
+  // Stryker disable next-line ConditionalExpression: parseInteger refuses an empty body too, and JSON.parse('') throws into the null below
   if (!trimmed) return null;
 
-  const bare = bareInteger(trimmed);
+  const bare = parseInteger(trimmed);
   if (bare !== null) return { status: bare };
 
   try {
     const body = JSON.parse(trimmed) as { status?: unknown; message?: unknown };
-    if (typeof body.status === "number") {
-      return {
-        status: body.status,
-        message: typeof body.message === "string" ? body.message : undefined,
-      };
+    const status = jsonNumber(body.status);
+    if (status !== null) {
+      return { status, message: typeof body.message === "string" ? body.message : undefined };
     }
   } catch {
     // fall through
@@ -164,7 +158,7 @@ export class Sms4FreeOtpSender implements OtpSender {
     this.apiUrl = process.env.SMS4FREE_API_URL || DEFAULT_API_URL;
   }
 
-  async send(phoneE164: string, code: string): Promise<OtpSendResult> {
+  async send(phoneE164: E164, code: string): Promise<OtpSendResult> {
     let recipient: string;
     try {
       recipient = toSmsRecipient(phoneE164);

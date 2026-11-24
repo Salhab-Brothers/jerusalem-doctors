@@ -117,7 +117,7 @@ describe("findByName", () => {
   it("sorts without a stored number to measure from", async () => {
     const { candidates } = await findByName(service({ exact: [row(300, "דניאל", "דריפוס"), row(100, "דניאל", "דריפוס")], family: [] }), DOC, "");
     expect(candidates.map((c) => c.licenseNumber)).toEqual(["100", "300"]);
-    expect(candidates[0].distance).toBeNull();
+    expect(candidates[0]!.distance).toBeNull();
   });
 
   it("also tries a double-barrelled name written with a space or a hyphen", async () => {
@@ -175,7 +175,7 @@ describe("findByName", () => {
 
     it("names another doctor who already holds the number, asking for Israeli slots only", async () => {
       const { candidates } = await findByName(service({ exact: EXACT, family: FAMILY, held: [slot("189317", "d2")] }), DOC, "189371");
-      expect(candidates[0].heldBy).toEqual({ id: "d2", name: "س ص" });
+      expect(candidates[0]!.heldBy).toEqual({ id: "d2", name: "س ص" });
       const heldRead = calls.find((c) => c.table === "doctor_license_slots");
       expect(heldRead?.filters).toContain("eq:license_region=IL");
       expect(heldRead?.filters.some((f) => f.startsWith("in:license_number=189317"))).toBe(true);

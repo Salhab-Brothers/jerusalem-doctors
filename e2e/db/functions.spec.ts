@@ -95,12 +95,12 @@ test.describe("save_doctor_profile()", () => {
       p_workplaces: [{ name: "مستشفى العيون سانت جون", name_normalized: "مستشفي العيون سانت جون", workplace_type: "hospital", is_primary: true, sort_order: 0 }],
     });
     expect(error).toBeNull();
-    expect(await read(id)).toEqual({ bio: "نبذة جديدة", specialties: 1, workplaces: ["مستشفى العيون سانت جون"] });
+    expect(await read(id!)).toEqual({ bio: "نبذة جديدة", specialties: 1, workplaces: ["مستشفى العيون سانت جون"] });
   });
 
   test("a failing part rolls the whole save back", async () => {
     const id = seededIds().closed;
-    const before = await read(id);
+    const before = await read(id!);
     const { error } = await serviceClient().rpc("save_doctor_profile", {
       p_doctor_id: id,
       p_updates: { bio: "يجب ألا تُحفظ" },
@@ -109,7 +109,7 @@ test.describe("save_doctor_profile()", () => {
       p_workplaces: [],
     });
     expect(error).not.toBeNull();
-    expect(await read(id)).toEqual(before);
+    expect(await read(id!)).toEqual(before);
   });
 });
 

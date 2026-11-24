@@ -34,13 +34,13 @@ describe("POST /api/reports (a card)", () => {
     db.queue("profile_reports", { data: { id: "r1" } });
     const res = await call({ target_doctor_id: TARGET, details: "ليس الطبيب الحقيقي" });
     expect(res.status).toBe(200);
-    expect(db.argsOf("profile_reports", "insert")[0][0]).toEqual({
+    expect(db.argsOf("profile_reports", "insert")[0]![0]).toEqual({
       source: "card",
       target_doctor_id: TARGET,
       reporter_doctor_id: ME,
       details: "ليس الطبيب الحقيقي",
     });
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ action: "profile_reported", target_doctor_id: TARGET, actor_doctor_id: ME });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ action: "profile_reported", target_doctor_id: TARGET, actor_doctor_id: ME });
     expect(raiseAlert).toHaveBeenCalledWith(expect.anything(), "profile_reported", { extra: { source: "card", report_id: "r1" } });
   });
 
@@ -64,8 +64,8 @@ describe("POST /api/reports/public (the form)", () => {
     db.queue("profile_reports", { data: { id: "r2" } });
     expect((await call(BODY)).status).toBe(200);
     // The registry's 1-189371 is the serial 189371.
-    expect(String(db.argsOf("doctors", "or")[0][0])).toContain("189371");
-    expect(db.argsOf("profile_reports", "insert")[0][0]).toEqual({
+    expect(String(db.argsOf("doctors", "or")[0]![0])).toContain("189371");
+    expect(db.argsOf("profile_reports", "insert")[0]![0]).toEqual({
       source: "public",
       target_doctor_id: TARGET,
       license_number: "1-189371",
@@ -81,7 +81,7 @@ describe("POST /api/reports/public (the form)", () => {
     const res = await call(BODY);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
-    expect(db.argsOf("profile_reports", "insert")[0][0]).toMatchObject({ target_doctor_id: null });
+    expect(db.argsOf("profile_reports", "insert")[0]![0]).toMatchObject({ target_doctor_id: null });
   });
 
   it("needs Turnstile, the per-IP limit and a name, contact and reason", async () => {

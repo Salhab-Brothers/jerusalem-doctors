@@ -11,6 +11,31 @@ export class InvalidPhoneError extends Error {
   }
 }
 
+declare const e164Brand: unique symbol;
+
+/**
+ * A phone number in E.164 form ("+972501234567"). Only normalizePhone() and
+ * parseE164() make one, so a function that asks for an E164 cannot be handed
+ * what a person typed ("050-123-4567") or a local number ("0501234567"): that
+ * would send a text, or count a rate limit, against the wrong number.
+ */
+export type E164 = string & { readonly [e164Brand]: true };
+
+// A plus, a country code that does not start with 0, up to 15 digits in all.
+const E164_SHAPE = /^\+[1-9]\d{6,14}$/;
+
+export function isE164(value: string): value is E164 {
+  return E164_SHAPE.test(value);
+}
+
+/** The number as an E164, or InvalidPhoneError. For a stored or received string
+ *  that should already be in E.164 form; to read what a person typed, use
+ *  normalizePhone(). */
+export function parseE164(value: string): E164 {
+  if (!isE164(value)) throw new InvalidPhoneError(value, "not in E.164 form");
+  return value;
+}
+
 /**
  * Parse and normalize a phone number to E.164 format.
  *
@@ -22,7 +47,7 @@ export class InvalidPhoneError extends Error {
  * single source of truth for phone format across signup, login, search and
  * the WhatsApp click-to-chat link builder.
  */
-export function normalizePhone(input: string, defaultCountry: "IL" = "IL"): string {
+export function normalizePhone(input: string, defaultCountry: "IL" = "IL"): E164 {
   if (!input || typeof input !== "string") {
     throw new InvalidPhoneError(String(input), "empty input");
   }
@@ -45,7 +70,7 @@ export function normalizePhone(input: string, defaultCountry: "IL" = "IL"): stri
     throw new InvalidPhoneError(input, "failed validation");
   }
 
-  return parsed.number; // E.164, e.g. "+972501234567"
+  return parseE164(parsed.number); // E.164, e.g. "+972501234567"
 }
 
 /**
@@ -111,7 +136,7 @@ export function isSmsDeliverable(e164: string): boolean {
  * OTP delivery. The `reason` distinguishes "wrong country" from "landline"
  * so callers can show the doctor the message that actually helps.
  */
-export function assertSmsDeliverable(e164: string): void {
+export function assertSmsDeliverable(e164: E164): void {
   if (isSmsDeliverable(e164)) return;
   throw new PhoneNotSmsDeliverableError(
     e164,
@@ -124,7 +149,7 @@ export function assertSmsDeliverable(e164: string): void {
  * `+972501234567` → `0501234567`. Validates first, a number we cannot
  * deliver to must never be silently reshaped into one that looks valid.
  */
-export function toSmsRecipient(e164: string): string {
+export function toSmsRecipient(e164: E164): string {
   assertSmsDeliverable(e164);
   return `0${e164.slice("+972".length)}`;
 }
