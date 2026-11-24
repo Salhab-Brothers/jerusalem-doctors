@@ -1,0 +1,337 @@
+{
+  "app/(admin)/PushSwitch.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/(admin)/admin/DoctorPanel.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/(admin)/admin/DoctorPanelBody.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/(admin)/admin/DoctorPanelSlot.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/(admin)/admin/LicenseCheckPanel.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/(admin)/admin/audit/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/(admin)/admin/institutions/InstitutionsEditor.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "app/(admin)/admin/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    }
+  },
+  "app/(admin)/admin/reports/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/(admin)/admin/signups/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/(admin)/admin/stats/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "app/(public)/verify/VerifyForm.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/api/admin/doctors/[id]/license/check/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/api/admin/doctors/[id]/license/find-by-name/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/admin/doctors/[id]/license/save/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "app/api/admin/doctors/[id]/mfa/reset/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/admin/doctors/[id]/profile/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/admin/doctors/[id]/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/api/admin/pending-signups/[id]/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/api/admin/specialties/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/auth/hooks/send-otp/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "app/api/cron/metrics/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/cron/sms-balance/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/signup/start/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/api/signup/verify/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/api/sms/delivery/route.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "app/dashboard/DashboardSearch.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/dashboard/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "app/profile/page.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "components/AccountMenu.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "components/FilterChips.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "components/RevealContact.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "components/SearchFilterChips.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "components/ThemeToggle.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "components/TurnstileWidget.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "components/WorkplaceEditor.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "components/install/InstallProvider.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "lib/admin/approvalMethods.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/admin/doctorDetail.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    }
+  },
+  "lib/admin/doctorsQuery.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "lib/admin/findByName.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 6
+    }
+  },
+  "lib/admin/licenseCheck.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "lib/adminStats.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/api/respond.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/auditText.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 7
+    }
+  },
+  "lib/auth/devLogin.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/auth/githubOidc.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "lib/auth/session.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "lib/careerStage.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/directory.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "lib/institutions.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "lib/licenseStatus.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/moh/client.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/moh/match.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/moh/mirror.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "lib/otp/failure.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/otp/sms4free.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/otp/summary.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/otp/whatsapp_meta.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "lib/profile/save.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "lib/push.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "lib/ratelimit.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "lib/sentryScrub.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 9
+    }
+  },
+  "lib/signup/unfinished.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    }
+  },
+  "lib/siteSettings.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "lib/specialties/catalogue.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "lib/turnstile.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  }
+}
