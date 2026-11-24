@@ -17,6 +17,7 @@
 //
 // Runs at 04:00 UTC: the ministry republishes the registry at about 03:12.
 
+import { parseInteger } from "@/lib/parse/number";
 import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/api/cronAuth";
 import { jsonOk, withJsonErrors } from "@/lib/api/respond";
@@ -98,7 +99,7 @@ async function ourDoctors(supabase: Service): Promise<OurDoctor[]> {
     // rule as the admin list's licence filter).
     .or("is_admin.eq.false,is_visible.eq.true");
   if (error) throw new Error(`doctors read failed: ${error.message}`);
-  const serial = (region: string | null, n: string | null) => (region === "IL" && n && /^\d{1,9}$/.test(n) ? Number(n) : null);
+  const serial = (region: string | null, n: string | null) => (region === "IL" && n && /^\d{1,9}$/.test(n) ? parseInteger(n) : null);
   return (data ?? []).map((d) => ({
     id: d.id,
     // A generated column, so typed nullable; built from two required names.

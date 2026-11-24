@@ -57,11 +57,13 @@ describe("GET /api/cron/sms-balance", () => {
 
   it("falls back to the default threshold when the setting is empty or not a number", async () => {
     fetchAvailableSms.mockResolvedValue(10);
-    for (const bad of ["", "  ", "abc", "-5"]) {
+    for (const bad of ["", "  ", "abc", "-5", "1e3", "0x10", ".5", "5.", "1,5", "Infinity"]) {
       vi.stubEnv("SMS4FREE_LOW_BALANCE_THRESHOLD", bad);
       expect(await (await call()).json()).toMatchObject({ threshold: 50, low: true });
     }
     vi.stubEnv("SMS4FREE_LOW_BALANCE_THRESHOLD", "5");
     expect(await (await call()).json()).toMatchObject({ threshold: 5, low: false });
+    vi.stubEnv("SMS4FREE_LOW_BALANCE_THRESHOLD", " 12.5 ");
+    expect(await (await call()).json()).toMatchObject({ threshold: 12.5, low: true });
   });
 });

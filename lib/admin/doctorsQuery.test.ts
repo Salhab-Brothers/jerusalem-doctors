@@ -24,12 +24,12 @@ describe("parseAdminDoctorsParams", () => {
     expect(parseAdminDoctorsParams({ status: "nonsense" }).filter).toBe("all");
   });
 
-  it("floors and clamps the page, never asking for a negative range", () => {
+  it("takes a page only when it is a whole number from 1, never asking for a negative range", () => {
     expect(parseAdminDoctorsParams({ page: "3" }).page).toBe(3);
-    expect(parseAdminDoctorsParams({ page: "2.7" }).page).toBe(2);
-    expect(parseAdminDoctorsParams({ page: "0" }).page).toBe(1);
-    expect(parseAdminDoctorsParams({ page: "-4" }).page).toBe(1);
-    expect(parseAdminDoctorsParams({ page: "abc" }).page).toBe(1);
+    // Anything else is page 1, including what JavaScript's Number() would have accepted.
+    for (const bad of ["2.7", "0", "-4", "abc", "", " 3", "3 ", "1e1", "0x10", "+3"]) {
+      expect(parseAdminDoctorsParams({ page: bad }).page, JSON.stringify(bad)).toBe(1);
+    }
   });
 
   it("trims the search and caps its length", () => {

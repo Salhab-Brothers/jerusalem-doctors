@@ -8,6 +8,7 @@
 // is the table's primary key, so these are cheap enough to run on a page
 // render, which the live CKAN lookup is not.
 
+import { parseInteger } from "@/lib/parse/number";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface MirrorPractitioner {
@@ -65,7 +66,7 @@ export async function readMirrorRows(
   service: SupabaseClient,
   serials: readonly string[],
 ): Promise<Map<string, MirrorPractitioner>> {
-  const numbers = [...new Set(serials.map((s) => Number(s)).filter((n) => Number.isInteger(n) && n > 0))];
+  const numbers = [...new Set(serials.map((s) => parseInteger(s)).filter((n): n is number => n !== null && n > 0))];
   if (numbers.length === 0) return new Map();
 
   const { data, error } = await service.from("moh_practitioners").select(COLUMNS).in("license_number", numbers);

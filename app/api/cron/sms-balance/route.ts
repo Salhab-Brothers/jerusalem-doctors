@@ -8,6 +8,7 @@
 // there is nothing on the doctor's screen to suggest why. Discovering that
 // from a support message is too late, so we check daily and shout early.
 
+import { parseDecimal } from "@/lib/parse/number";
 import * as Sentry from "@sentry/nextjs";
 import { verifyCronAuth } from "@/lib/api/cronAuth";
 import { jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
@@ -31,10 +32,10 @@ export const GET = withJsonErrors(async (req: Request) => {
     return jsonOk({ ok: true, skipped: true, provider });
   }
 
-  // An empty or non-numeric value must not switch the alert off (Number("")
-  // is 0, and nothing is below 0): fall back to the default instead.
-  const configured = Number(process.env.SMS4FREE_LOW_BALANCE_THRESHOLD?.trim() || NaN);
-  const threshold = Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_THRESHOLD;
+  // An empty or non-numeric value must not switch the alert off (nothing is
+  // below 0): fall back to the default instead.
+  const configured = parseDecimal(process.env.SMS4FREE_LOW_BALANCE_THRESHOLD?.trim());
+  const threshold = configured !== null && configured >= 0 ? configured : DEFAULT_THRESHOLD;
 
   let balance: number;
   try {

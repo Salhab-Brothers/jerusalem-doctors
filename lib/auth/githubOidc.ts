@@ -15,6 +15,7 @@
 // is on main.
 // https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect
 
+import { jsonNumber } from "@/lib/parse/number";
 import { createPublicKey, verify, type JsonWebKey } from "node:crypto";
 
 export const GITHUB_ISSUER = "https://token.actions.githubusercontent.com";
@@ -98,11 +99,13 @@ export async function verifySmokeToken(
     if (!signed) return null;
 
     const c = json(p);
-    const fresh = typeof c.iat === "number" && c.iat <= now + 60 && now - c.iat <= MAX_AGE_SECONDS;
+    const iat = jsonNumber(c.iat);
+    const exp = jsonNumber(c.exp);
+    const fresh = iat !== null && iat <= now + 60 && now - iat <= MAX_AGE_SECONDS;
     const ok =
       c.iss === GITHUB_ISSUER &&
       c.aud === CI_AUDIENCE &&
-      typeof c.exp === "number" && c.exp > now &&
+      exp !== null && exp > now &&
       fresh &&
       c.repository === REPOSITORY &&
       // Stryker disable next-line ConditionalExpression: a workflow_ref that is not a string throws at startsWith and is refused by the catch

@@ -8,6 +8,7 @@
 // Output:  one of four discrete statuses, with the registry's own spelling
 //          included on mismatches so the UI can prompt "did you mean…?".
 
+import { parseInteger } from "@/lib/parse/number";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeHebrew } from "@/lib/normalize/hebrew";
 import { MohClient } from "./client";
@@ -259,10 +260,12 @@ export async function resolveIlLicense(
 ): Promise<ResolvedIlLicense> {
   let best: ResolvedIlLicense | null = null;
   for (const serial of input.candidates) {
+    const licenseNumber = parseInteger(serial);
+    if (licenseNumber === null) continue;
     const result = await verifyLicense(
       supabase,
       {
-        licenseNumber: Number(serial),
+        licenseNumber,
         hebrewFirstName: input.hebrewFirstName,
         hebrewFamilyName: input.hebrewFamilyName,
       },
