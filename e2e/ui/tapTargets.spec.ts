@@ -43,7 +43,12 @@ test.describe("signed in @phone", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     expect(await tooSmall(page), "/dashboard").toEqual([]);
 
+    // The idle dashboard already shows featured doctors with reveal buttons of
+    // their own; wait for the search this typing starts, or the tap can land on a
+    // card the search is about to replace.
+    const searched = page.waitForResponse((r) => r.url().includes("/api/search") && r.ok());
     await page.getByPlaceholder("ابحث عن طبيب أو تخصص").fill("د");
+    await searched;
     await expect(page.getByRole("button", { name: "إظهار الهاتف والبريد" }).first()).toBeVisible();
     expect(await tooSmall(page), "/dashboard with results").toEqual([]);
     await page.getByRole("button", { name: "إظهار الهاتف والبريد" }).first().click();
