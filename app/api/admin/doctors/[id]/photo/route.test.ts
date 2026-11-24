@@ -100,7 +100,7 @@ describe("POST /api/admin/doctors/[id]/photo", () => {
     const res = await POST(post(), ctx);
     expect(res.status).toBe(200);
     expect(uploadSpy).toHaveBeenCalledWith("00000000-0000-4000-8000-0000000000d1.png", "image/png");
-    expect(String(updates[0].profile_picture_url)).toContain("?v=");
+    expect(String(updates[0]!.profile_picture_url)).toContain("?v=");
     expect(audits[0]).toMatchObject({
       action: "admin_doctor_photo_changed",
       target_doctor_id: "00000000-0000-4000-8000-0000000000d1",

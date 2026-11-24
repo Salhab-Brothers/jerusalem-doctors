@@ -119,15 +119,15 @@ type Caller = (typeof ROLES)[number];
 async function as(caller: Caller): Promise<APIRequestContext> {
   return request.newContext({
     baseURL: BASE_URL,
-    storageState: caller === "anon" ? undefined : stateFile(caller as Role),
+    ...(caller === "anon" ? {} : { storageState: stateFile(caller as Role) }),
     maxRedirects: 0,
   });
 }
 
 async function call(ctx: APIRequestContext, key: string, headers: Record<string, string> = {}) {
-  const [method, route] = key.split(" ");
-  const url = route.replace("[id]", SOME_ID) + (route === "/api/search" ? "?q=x" : "");
-  return ctx.fetch(url, { method, data: method === "GET" ? undefined : {}, headers });
+  const [method = "GET", route] = key.split(" ");
+  const url = route!.replace("[id]", SOME_ID) + (route === "/api/search" ? "?q=x" : "");
+  return ctx.fetch(url, { method, ...(method === "GET" ? {} : { data: {} }), headers });
 }
 
 test("every shipped API route has a policy, and every policy a route", () => {
@@ -235,7 +235,7 @@ test.describe("machine callers", () => {
       expect(res.status, await res.text()).toBe(200);
       const sent = await inbox("0521110077");
       expect(sent.length).toBeGreaterThan(0);
-      const { msg, sender } = sent[sent.length - 1];
+      const { msg, sender } = sent.at(-1)!;
       expect(sender).toBe("JDoctors");
       const code = msg.match(/\d{6}/)?.[0];
       expect(code, msg).toBeTruthy();

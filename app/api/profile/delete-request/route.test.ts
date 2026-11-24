@@ -36,7 +36,7 @@ describe("POST /api/profile/delete-request", () => {
     expect(auth.signOut).toHaveBeenCalled();
     expect(db.argsOf("doctors", "update")).toEqual([[{ is_visible: false, is_active: false }]]);
     expect(db.argsOf("doctors", "eq")).toEqual([["id", "d1"]]);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toEqual({
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toEqual({
       actor_doctor_id: "d1",
       action: "delete_requested",
       target_doctor_id: "d1",

@@ -36,8 +36,8 @@ export function TextField({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  required?: boolean;
-  error?: string;
+  required?: boolean | undefined;
+  error?: string | undefined;
   dir?: "auto";
   placeholder?: string;
 }) {

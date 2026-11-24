@@ -38,8 +38,9 @@ export function profileGaps(doctor: ReminderDoctor, workplaces: ReminderWorkplac
     });
     // Several clinics get one line, not one each: a doctor in three clinics
     // should not be asked three times for the same thing.
-    if (lacking.length === 1) {
-      const { name, missing } = lacking[0];
+    const [only] = lacking;
+    if (lacking.length === 1 && only) {
+      const { name, missing } = only;
       gaps.push(`يمكنك إضافة ${whatIsMissing(missing)} لعيادة «${name}» ليتمكّن الزملاء من الوصول إليها.`);
     } else if (lacking.length > 1) {
       const all = [...new Set(lacking.flatMap((l) => l.missing))];

@@ -35,9 +35,9 @@ describe("PATCH /api/admin/number-requests/[id]", () => {
     db.queue("number_requests", { data: { requester_id: "d1", query: "أحمد" } });
     const res = await call();
     expect(await res.json()).toEqual({ ok: true });
-    expect(db.argsOf("number_requests", "update")[0][0]).toHaveProperty("resolved_at");
+    expect(db.argsOf("number_requests", "update")[0]![0]).toHaveProperty("resolved_at");
     expect(db.argsOf("number_requests", "is")).toEqual([["resolved_at", null]]);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toEqual({
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toEqual({
       actor_doctor_id: "admin-1",
       action: "number_request_resolved",
       target_doctor_id: "d1",

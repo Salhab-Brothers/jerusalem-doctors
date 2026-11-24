@@ -151,8 +151,8 @@ describe("PATCH /api/admin/doctors/[id]/profile: who may call it", () => {
 describe("PATCH /api/admin/doctors/[id]/profile: profile fields", () => {
   it("writes the field and its search copy, for the doctor in the path", async () => {
     expect((await call({ arabic_first_name: "ليلى سناء" })).status).toBe(200);
-    expect(saves[0].p_doctor_id).toBe("00000000-0000-4000-8000-0000000000d1");
-    expect(saves[0].p_updates).toMatchObject({
+    expect(saves[0]!.p_doctor_id).toBe("00000000-0000-4000-8000-0000000000d1");
+    expect(saves[0]!.p_updates).toMatchObject({
       arabic_first_name: "ليلى سناء",
       arabic_first_name_normalized: expect.any(String),
       arabic_full_name_normalized: expect.any(String),
@@ -165,12 +165,12 @@ describe("PATCH /api/admin/doctors/[id]/profile: profile fields", () => {
     expect(await res.json()).toMatchObject({ hebrew_name_changed: true });
     // Niqqud and the surrounding spaces are gone: signup stores the
     // normalized form, and one column should hold one shape of the data.
-    expect(saves[0].p_updates.hebrew_first_name).toBe("סאלם");
+    expect(saves[0]!.p_updates.hebrew_first_name).toBe("סאלם");
   });
 
   it("ignores the fields other routes own, and the one nobody owns", async () => {
     await call({ bio: "نص", is_admin: true, is_visible: false, license_number: "99999", consent_directory_use: true });
-    expect(Object.keys(saves[0].p_updates)).toEqual(["bio"]);
+    expect(Object.keys(saves[0]!.p_updates)).toEqual(["bio"]);
   });
 
   it("keeps the workplace rules the doctor's own form has", async () => {
@@ -192,13 +192,13 @@ describe("PATCH /api/admin/doctors/[id]/profile: the phone", () => {
   it("leaves the login alone when the number did not change", async () => {
     await call({ phone: "+972501112222", bio: "x" });
     expect(authCalls).toHaveLength(0);
-    expect(saves[0].p_updates).not.toHaveProperty("phone_e164");
+    expect(saves[0]!.p_updates).not.toHaveProperty("phone_e164");
   });
 
   it("moves auth.users before the row, and confirms the number", async () => {
     expect((await call({ phone: NEW })).status).toBe(200);
     expect(authCalls).toEqual([{ id: "auth-1", attrs: { phone: NEW_E164, phone_confirm: true } }]);
-    expect(saves[0].p_updates).toMatchObject({ phone_e164: NEW_E164, phone_display: NEW });
+    expect(saves[0]!.p_updates).toMatchObject({ phone_e164: NEW_E164, phone_display: NEW });
   });
 
   it("refuses a number that cannot receive a code until it is confirmed", async () => {
@@ -211,7 +211,7 @@ describe("PATCH /api/admin/doctors/[id]/profile: the phone", () => {
 
   it("takes it on a second, explicit press", async () => {
     expect((await call({ phone: "+970599123456", confirm_phone_risk: true })).status).toBe(200);
-    expect(saves[0].p_updates.phone_e164).toBe("+970599123456");
+    expect(saves[0]!.p_updates.phone_e164).toBe("+970599123456");
   });
 
   it("rejects a malformed number before any write", async () => {
@@ -240,7 +240,7 @@ describe("PATCH /api/admin/doctors/[id]/profile: the phone", () => {
   it("ends the old number's logins once the move has landed", async () => {
     expect((await call({ phone: NEW })).status).toBe(200);
     expect(revokes).toEqual(["auth-1"]);
-    expect((audits[0].metadata as Record<string, unknown>).sessions_revoked).toBe(true);
+    expect((audits[0]!.metadata as Record<string, unknown>).sessions_revoked).toBe(true);
   });
 
   it("leaves everyone's logins alone when the number did not change, or the save failed", async () => {
@@ -254,7 +254,7 @@ describe("PATCH /api/admin/doctors/[id]/profile: the phone", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     revokeError = { message: "boom" };
     expect((await call({ phone: NEW })).status).toBe(200);
-    expect((audits[0].metadata as Record<string, unknown>).sessions_revoked).toBe(false);
+    expect((audits[0]!.metadata as Record<string, unknown>).sessions_revoked).toBe(false);
   });
 
   it("puts the login back when the row save fails afterwards", async () => {
@@ -279,24 +279,24 @@ describe("PATCH /api/admin/doctors/[id]/profile: the phone", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ warnings: ["no_login_account"] });
     expect(authCalls).toHaveLength(0);
-    expect(saves[0].p_updates.phone_e164).toBe(NEW_E164);
+    expect(saves[0]!.p_updates.phone_e164).toBe(NEW_E164);
   });
 
   it("never clears is_phone_verified on its own", async () => {
     await call({ phone: NEW });
-    expect(saves[0].p_updates).not.toHaveProperty("is_phone_verified");
+    expect(saves[0]!.p_updates).not.toHaveProperty("is_phone_verified");
   });
 
   it("writes it when the admin sets it deliberately", async () => {
     await call({ is_phone_verified: false });
-    expect(saves[0].p_updates).toMatchObject({ is_phone_verified: false });
+    expect(saves[0]!.p_updates).toMatchObject({ is_phone_verified: false });
   });
 });
 
 describe("PATCH /api/admin/doctors/[id]/profile: the trail", () => {
   it("records the fields and a masked phone, not the profile's contents", async () => {
     await call({ bio: "سيرة طويلة جدًا", phone: "0503334444" });
-    const m = audits[0].metadata as Record<string, unknown>;
+    const m = audits[0]!.metadata as Record<string, unknown>;
     expect(audits[0]).toMatchObject({
       action: "admin_doctor_profile_edited",
       actor_doctor_id: "00000000-0000-4000-8000-00000000a001",
@@ -372,22 +372,22 @@ describe("PATCH /api/admin/doctors/[id]/profile: refusals and failures", () => {
 
   it("accepts the Hebrew names being cleared or changed one at a time", async () => {
     await call({ hebrew_first_name: null });
-    expect(saves[0].p_updates.hebrew_first_name).toBeNull();
+    expect(saves[0]!.p_updates.hebrew_first_name).toBeNull();
     await call({ hebrew_family_name: "כהן" });
-    expect(saves[1].p_updates).toHaveProperty("hebrew_family_name");
+    expect(saves[1]!.p_updates).toHaveProperty("hebrew_family_name");
     expect(audits[1]).toMatchObject({ metadata: { hebrew_name_changed: true } });
     await call({ hebrew_first_name: BASE.hebrew_first_name });
-    expect(audits[2].metadata).not.toHaveProperty("hebrew_name_changed");
+    expect(audits[2]!.metadata).not.toHaveProperty("hebrew_name_changed");
   });
 
   it("keeps the doctor's phone display when the same number is retyped the same way", async () => {
     await call({ phone: BASE.phone_display });
-    expect(saves[0].p_updates).not.toHaveProperty("phone_display");
+    expect(saves[0]!.p_updates).not.toHaveProperty("phone_display");
   });
 
   it("formats a number typed as E.164 for the cards", async () => {
     await call({ phone: NEW_E164 });
-    expect(saves[0].p_updates.phone_display).not.toBe(NEW_E164);
+    expect(saves[0]!.p_updates.phone_display).not.toBe(NEW_E164);
   });
 
   it("notes in the trail that a confirmed number cannot receive codes", async () => {

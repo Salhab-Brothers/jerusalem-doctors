@@ -51,23 +51,23 @@ describe("Sms4FreeOtpSender.send", () => {
   it("reports the accepted count as the message reference", async () => {
     reply("1");
     expect(await new Sms4FreeOtpSender().send("+972501234567", "123456")).toEqual({ messageRef: "sms4free:accepted:1" });
-    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const sent = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(sent).toMatchObject({ recipient: "0501234567", sender: "JDoctors" });
-    expect(fetchMock.mock.calls[0][0]).toBe("https://api.sms4free.co.il/ApiSMS/v2/SendSMS");
+    expect(fetchMock.mock.calls[0]![0]).toBe("https://api.sms4free.co.il/ApiSMS/v2/SendSMS");
   });
 
   it("ignores an empty API address setting", async () => {
     vi.stubEnv("SMS4FREE_API_URL", "");
     reply("1");
     await new Sms4FreeOtpSender().send("+972501234567", "123456");
-    expect(fetchMock.mock.calls[0][0]).toBe("https://api.sms4free.co.il/ApiSMS/v2/SendSMS");
+    expect(fetchMock.mock.calls[0]![0]).toBe("https://api.sms4free.co.il/ApiSMS/v2/SendSMS");
   });
 
   it("uses an API address from the environment", async () => {
     vi.stubEnv("SMS4FREE_API_URL", "https://sms.example/send");
     reply("1");
     await new Sms4FreeOtpSender().send("+972501234567", "123456");
-    expect(fetchMock.mock.calls[0][0]).toBe("https://sms.example/send");
+    expect(fetchMock.mock.calls[0]![0]).toBe("https://sms.example/send");
   });
 
   it("fails permanently for a number it cannot text, without calling the provider", async () => {
@@ -117,7 +117,7 @@ describe("fetchAvailableSms", () => {
     vi.stubEnv("SMS4FREE_BALANCE_URL", "https://sms.example/balance");
     reply("5");
     await fetchAvailableSms();
-    expect(fetchMock.mock.calls[0][0]).toBe("https://sms.example/balance");
+    expect(fetchMock.mock.calls[0]![0]).toBe("https://sms.example/balance");
   });
 
   it("fails without credentials, on a network error, on HTTP errors and on unreadable bodies", async () => {

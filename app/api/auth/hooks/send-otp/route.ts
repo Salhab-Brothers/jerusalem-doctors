@@ -42,7 +42,7 @@ interface SendSmsHookPayload {
  * SMS itself went out fine. The body content is irrelevant; the header is not.
  */
 function hookResponse(status: number, headers?: HeadersInit): Response {
-  return Response.json({}, { status, headers });
+  return Response.json({}, headers ? { status, headers } : { status });
 }
 
 /** Supabase stores phones without a leading +; the Meta sender wants E.164. */

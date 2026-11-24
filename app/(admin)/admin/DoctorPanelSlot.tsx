@@ -40,10 +40,10 @@ export function DoctorPanelSlot({
   /** This panel, with the editor open. */
   editHref: string;
   /** The doctors either side in the list this was opened from (read-only view only). */
-  prevHref?: string;
-  nextHref?: string;
+  prevHref?: string | undefined;
+  nextHref?: string | undefined;
   /** Which of how many this is in that list. */
-  position?: { n: number; of: number };
+  position?: { n: number; of: number } | undefined;
 }) {
   if (!detail) {
     return (

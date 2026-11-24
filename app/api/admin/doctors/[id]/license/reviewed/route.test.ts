@@ -30,7 +30,7 @@ describe("POST /api/admin/doctors/[id]/license/reviewed", () => {
   it("marks the licence reviewed and logs it with the status it had and the note", async () => {
     expect((await call({ note: "  تحققت من الشهادة  " })).status).toBe(200);
     expect(db.argsOf("doctors", "update")).toEqual([[{ license_reviewed_at: expect.any(String) }]]);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({
       actor_doctor_id: "admin-1",
       action: "admin_license_reviewed",
       target_doctor_id: ID,
@@ -40,8 +40,8 @@ describe("POST /api/admin/doctors/[id]/license/reviewed", () => {
 
   it("needs no note, and no body at all", async () => {
     expect((await call({})).status).toBe(200);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ metadata: { license_status: "not_found" } });
-    expect(db.argsOf("audit_logs", "insert")[0][0]).not.toHaveProperty("metadata.note");
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ metadata: { license_status: "not_found" } });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).not.toHaveProperty("metadata.note");
     db.queue("doctors", { data: { license_verification_status: null } });
     const { POST } = await import("./route");
     expect((await POST(new Request("http://x/y", { method: "POST" }), { params: Promise.resolve({ id: ID }) })).status).toBe(200);

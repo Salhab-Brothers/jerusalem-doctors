@@ -12,15 +12,15 @@ const SOURCE = 'export const rows = (service: { from: (t: string) => unknown }) 
 
 async function messages(file: string, code = SOURCE) {
   const [result] = await eslint.lintText(code, { filePath: path.join(process.cwd(), file) });
-  return result.messages.filter((m) => m.ruleId === "no-restricted-syntax");
+  return result!.messages.filter((m) => m.ruleId === "no-restricted-syntax");
 }
 
 describe("no direct reads of the doctors table", () => {
   it("stops a new route that lists doctors, and points to the view", async () => {
     const found = await messages("app/api/colleagues/route.ts");
     expect(found).toHaveLength(1);
-    expect(found[0].message).toContain("listed_doctors");
-    expect(found[0].message).toContain("eslint.config.mjs");
+    expect(found[0]!.message).toContain("listed_doctors");
+    expect(found[0]!.message).toContain("eslint.config.mjs");
   });
 
   it("stops a page and a library the same way", async () => {

@@ -14,8 +14,8 @@ export interface NavChild {
   /** May carry a query (`/admin/audit?action=alert`): the pill is lit only while it is in the address. */
   href: string;
   label: string;
-  badge?: number;
-  badgeLabel?: string;
+  badge?: number | undefined;
+  badgeLabel?: string | undefined;
 }
 
 export interface NavTab {
@@ -23,9 +23,9 @@ export interface NavTab {
   href: string;
   label: string;
   /** A small count after the label (e.g. doctors waiting for approval). */
-  badge?: number;
+  badge?: number | undefined;
   /** What the badge counts, for screen readers. */
-  badgeLabel?: string;
+  badgeLabel?: string | undefined;
   /** Match only this exact path (for a section root like /admin). */
   exact?: boolean;
   /** The pages this tab groups, shown as pills while the tab is open. */
@@ -37,7 +37,7 @@ const pathOf = (href: string) => href.split("?")[0];
 /** A big count would crowd the tab on a phone. */
 const shown = (n: number) => (n > 99 ? "99+" : String(n));
 
-function Badge({ n, label }: { n?: number; label?: string }) {
+function Badge({ n, label }: { n?: number | undefined; label?: string | undefined }) {
   if (!n) return null;
   return (
     <span className="ms-1.5 rounded-full border border-warn-line bg-warn-bg px-1.5 text-xs font-semibold text-warn">
@@ -75,7 +75,7 @@ export function NavTabs({ tabs, label }: { tabs: NavTab[]; label: string }) {
           <Link
             key={t.label}
             // Open already: it goes to the page the admin is on (or the group's first), not wherever the counts would send a visitor.
-            href={active(t) && t.children ? (lit?.href ?? t.children[0].href) : t.href}
+            href={active(t) && t.children ? (lit?.href ?? t.children[0]?.href ?? t.href) : t.href}
             // A group is "true", not "page": the pill under it carries the page.
             aria-current={active(t) ? (t.children ? "true" : "page") : undefined}
             className={

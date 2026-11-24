@@ -175,7 +175,7 @@ const ARABIC_INDIC = "٠١٢٣٤٥٦٧٨٩";
  * otherwise render a year as ٢٬٠٢٢.
  */
 export function toArabicIndicDigits(n: number): string {
-  return String(n).replace(/\d/g, (d) => ARABIC_INDIC[Number(d)]);
+  return String(n).replace(/\d/g, (d) => ARABIC_INDIC[Number(d)] ?? d);
 }
 
 /** "طبيب مقيم · منذ ٢٠٢٢", the year only ever qualifies a resident. */

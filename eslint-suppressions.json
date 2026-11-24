@@ -264,11 +264,6 @@
       "count": 1
     }
   },
-  "lib/moh/match.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "lib/moh/mirror.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

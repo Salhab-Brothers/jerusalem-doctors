@@ -32,8 +32,8 @@ export function Field({
 }: {
   label: string;
   htmlFor?: string;
-  required?: boolean;
-  error?: string;
+  required?: boolean | undefined;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -93,7 +93,7 @@ export function RetiredCheckbox({
   checked: boolean;
   onChange: (v: boolean) => void;
   /** Greys the option out and says why (lib/careerStage.ts RESIDENT_NOT_RETIRED). */
-  disabledReason?: string;
+  disabledReason?: string | undefined;
 }) {
   return (
     <label className={disabledReason ? OPTION_CARD_DISABLED : OPTION_CARD}>

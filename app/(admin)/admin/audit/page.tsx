@@ -1,3 +1,4 @@
+import { withoutUndefined } from "@/lib/withoutUndefined";
 import { requireAdmin } from "@/lib/auth/session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -37,7 +38,7 @@ export default async function AdminAuditPage({
   // The filtering is in SQL (admin_audit_events), where the doctor match is a
   // join and the Jerusalem days are Postgres's own time zone arithmetic.
   const [{ data, error }, { data: institutions }] = await Promise.all([
-    service.rpc("admin_audit_events", {
+    service.rpc("admin_audit_events", withoutUndefined({
       // Left out means NULL: every optional argument defaults to it.
       p_action: params.action || undefined,
       p_term: toIlikeTerm(params.q) || undefined,
@@ -46,7 +47,7 @@ export default async function AdminAuditPage({
       p_people_only: params.people,
       p_limit: PAGE_SIZE,
       p_offset: from,
-    }),
+    })),
     service.from("institutions").select("id, name_ar"),
   ]);
   const rows = (data ?? []) as (Row & { total: number })[];

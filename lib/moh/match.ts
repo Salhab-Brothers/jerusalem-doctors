@@ -106,20 +106,23 @@ function cleanSpecialty(s: string | null | undefined): string | null {
 export function levenshtein(a: string, b: string): number {
   let prev = new Array<number>(b.length + 1);
   let curr = new Array<number>(b.length + 1);
+  // Every cell read below was written earlier in the pass; the fallback only
+  // satisfies the compiler and is never the smaller value.
+  const cell = (row: number[], j: number) => row[j] ?? Infinity;
   for (let j = 0; j <= b.length; j++) prev[j] = j;
   for (let i = 1; i <= a.length; i++) {
     curr[0] = i;
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       curr[j] = Math.min(
-        curr[j - 1] + 1,
-        prev[j] + 1,
-        prev[j - 1] + cost,
+        cell(curr, j - 1) + 1,
+        cell(prev, j) + 1,
+        cell(prev, j - 1) + cost,
       );
     }
     [prev, curr] = [curr, prev];
   }
-  return prev[b.length] as number;
+  return cell(prev, b.length);
 }
 
 /** The live fallback runs while a doctor waits on the form. */

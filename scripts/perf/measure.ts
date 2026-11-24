@@ -77,8 +77,9 @@ function curl(jar: string, path: string): Sample {
     { encoding: "utf8" },
   );
   const [headers, metrics] = out.split("\n@@ ");
-  const [status, connect, tls, ttfb, total, bytes] = metrics.trim().split(" ").map(Number);
-  const timing = /^server-timing:.*?dur=([\d.]+)/im.exec(headers);
+  // A missing field reads as NaN, which shows in the output, not as a made-up 0.
+  const [status = NaN, connect = NaN, tls = NaN, ttfb = NaN, total = NaN, bytes = NaN] = metrics!.trim().split(" ").map(Number);
+  const timing = /^server-timing:.*?dur=([\d.]+)/im.exec(headers!);
   return { status, connect, tls, ttfb, total, bytes, server: timing ? Number(timing[1]) / 1000 : null };
 }
 
@@ -100,7 +101,7 @@ const sleep = (s: number) => execFileSync("sleep", [String(s)]);
 
 function quantile(xs: number[], q: number): number {
   const s = [...xs].sort((a, b) => a - b);
-  return s[Math.min(s.length - 1, Math.floor(q * s.length))];
+  return s[Math.min(s.length - 1, Math.floor(q * s.length))] ?? NaN;
 }
 const ms = (s: number) => `${Math.round(s * 1000)}`;
 

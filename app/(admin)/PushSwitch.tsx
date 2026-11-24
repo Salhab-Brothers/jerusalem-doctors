@@ -82,7 +82,7 @@ function keyBytes(key: string): Uint8Array<ArrayBuffer> {
 }
 
 async function send(method: "POST" | "DELETE", path: string, body?: unknown): Promise<Response> {
-  return fetch(path, { method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  return fetch(path, { method, headers: { "Content-Type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 }
 
 export function PushSwitch({ publicKey }: { publicKey: string }) {

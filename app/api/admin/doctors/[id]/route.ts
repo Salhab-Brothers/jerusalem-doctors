@@ -7,6 +7,7 @@
 // page promises after a deletion request.
 // Audit-logs every state change.
 
+import { withoutUndefined } from "@/lib/withoutUndefined";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { CAREER_STAGES, RESIDENCY_YEAR_MIN } from "@/lib/careerStage";
@@ -148,7 +149,7 @@ export const PATCH = withJsonErrors(async (
   // the table, never by spreading the body: approval_reason is not a column.
   // A field the body left out is undefined, which is not sent; an explicit
   // null is, and clears the column.
-  const updates: TablesUpdate<"doctors"> = {
+  const updates: TablesUpdate<"doctors"> = withoutUndefined({
     is_admin_approved: approvalChange,
     // When the directory first had them, for «جديد هذا الأسبوع».
     ...(approvalChange !== undefined && { approved_at: approvalChange ? new Date().toISOString() : null }),
@@ -165,7 +166,7 @@ export const PATCH = withJsonErrors(async (
     // Accepting a doctor the registry does not confirm, with a reason, is the
     // review the licence queue waits for.
     ...(approving && (unconfirmed || corrected) && { license_reviewed_at: new Date().toISOString() }),
-  };
+  });
 
   // Accepting only lands on a doctor who is still waiting and still open: a
   // second admin's accept, or a deletion request, that arrived since the read

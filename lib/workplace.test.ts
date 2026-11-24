@@ -18,8 +18,8 @@ describe("toWorkplaceEntries", () => {
 
   it("reads the clinic's fund from the embedded institution", () => {
     const base = { name: "عيادة", workplace_type: "clinic" as const, details: null, address: null, hours: null, phone: null, is_primary: true, sort_order: 0 };
-    expect(toWorkplaceEntries([{ ...base, hmo: { name_ar: "كلاليت" } }])[0].hmo).toBe("كلاليت");
-    expect(toWorkplaceEntries([{ ...base, hmo: [{ name_ar: "مكابي" }] }])[0].hmo).toBe("مكابي");
+    expect(toWorkplaceEntries([{ ...base, hmo: { name_ar: "كلاليت" } }])[0]!.hmo).toBe("كلاليت");
+    expect(toWorkplaceEntries([{ ...base, hmo: [{ name_ar: "مكابي" }] }])[0]!.hmo).toBe("مكابي");
   });
 
   it("turns null columns into empty strings", () => {
@@ -129,7 +129,7 @@ describe("cleanWorkplaces", () => {
 
   it("sends a fund only for a clinic", () => {
     const row = { name: "هداسا", workplace_type: "hospital" as const, details: "", address: "", hours: "", phone: "", hmo: "كلاليت", is_primary: true };
-    expect(cleanWorkplaces([row])[0].hmo).toBeNull();
+    expect(cleanWorkplaces([row])[0]!.hmo).toBeNull();
   });
 });
 

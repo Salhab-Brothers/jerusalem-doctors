@@ -149,7 +149,7 @@ describe("institutionUsage", () => {
       ],
     });
     const usage = await institutionUsage(db.client as never);
-    expect(usage.doctors.clalit.map((d) => d.name)).toEqual(["أحمد سلهب", "ليلى الخطيب"]);
+    expect(usage.doctors.clalit!.map((d) => d.name)).toEqual(["أحمد سلهب", "ليلى الخطيب"]);
     expect(usage.unmatched).toEqual([
       {
         name: "القدس",

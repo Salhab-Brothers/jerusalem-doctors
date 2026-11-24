@@ -33,7 +33,7 @@ export interface SeedDoctor {
   email?: string;
   account?: Role;
   /** A sign-in for a test-owned doctor (an address in THROWAWAY_ACCOUNTS). */
-  loginEmail?: string;
+  loginEmail?: string | undefined;
   bio?: string;
   seekingWork?: boolean;
   featured?: "doctor" | "graduate";

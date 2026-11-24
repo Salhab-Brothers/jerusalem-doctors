@@ -26,7 +26,7 @@ describe("with Redis", () => {
     const { alreadySent } = await import("./sentOnce");
     redis.exists.mockResolvedValue(0);
     await alreadySent("k");
-    const opts = redis.ctor.mock.calls[0][0];
+    const opts = redis.ctor.mock.calls[0]![0];
     expect(opts.retry).toBe(false);
     expect(opts.signal()).toBeInstanceOf(AbortSignal);
   });

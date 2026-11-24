@@ -34,7 +34,7 @@ async function exposed(): Promise<{ tables: string[]; rpcs: string[]; firstColum
     tables,
     rpcs: paths.filter((p) => p.startsWith("/rpc/")).map((p) => p.slice(5)),
     // A filter every row matches, so a delete would reach all of them.
-    firstColumn: Object.fromEntries(tables.map((t) => [t, Object.keys(spec.definitions[t].properties)[0]])),
+    firstColumn: Object.fromEntries(tables.map((t) => [t, Object.keys(spec.definitions[t]!.properties)[0]!])),
   };
 }
 
@@ -75,7 +75,7 @@ test.describe("row-level security", () => {
       const ins = await anon.from(t).insert({}).select();
       expect(ins.data ?? [], `anon insert ${t}`).toEqual([]);
       expect(ins.error, `anon insert ${t}`).not.toBeNull();
-      const del = await anon.from(t).delete().not(firstColumn[t], "is", null).select();
+      const del = await anon.from(t).delete().not(firstColumn[t]!, "is", null).select();
       expect(del.data ?? [], `anon delete ${t}`).toEqual([]);
       const after = await db.from(t).select("*", { count: "exact", head: true });
       expect(after.count, `rows in ${t}`).toBe(before.count);

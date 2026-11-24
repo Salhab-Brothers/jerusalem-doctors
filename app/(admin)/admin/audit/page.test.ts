@@ -107,7 +107,8 @@ describe("/admin/audit", () => {
   it("sends nothing for an unknown event, a malformed date or a search of only symbols", async () => {
     const { default: Page } = await import("./page");
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ action: "drop_table", from: "2026-02-31", q: "%_*" }) }));
-    expect(calls.at(-1)).toMatchObject({ p_action: undefined, p_from: undefined, p_term: undefined });
+    // Left out, which the function reads as NULL: not sent as an empty value.
+    for (const arg of ["p_action", "p_from", "p_term"]) expect(calls.at(-1), arg).not.toHaveProperty(arg);
     expect(html).toContain("120 حدثًا تطابق التصفية");
   });
 

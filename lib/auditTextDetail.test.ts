@@ -117,38 +117,38 @@ describe("auditDetail", () => {
 
 describe("auditFields", () => {
   it("labels booleans, empties, lists and objects", () => {
-    expect(value("is_active", true).value).toBe("نعم");
-    expect(value("is_active", false).value).toBe("لا");
-    expect(value("note", "").value).toBe("لا شيء");
-    expect(value("note", null).value).toBe("لا شيء");
-    expect(value("tags", ["a", "b"]).value).toBe("a، b");
-    expect(value("tags", []).value).toBe("لا شيء");
-    expect(value("fields", ["bio", "bio"]).value).toBeTruthy();
-    expect(value("fields", []).value).toBe("لا شيء");
+    expect(value("is_active", true)!.value).toBe("نعم");
+    expect(value("is_active", false)!.value).toBe("لا");
+    expect(value("note", "")!.value).toBe("لا شيء");
+    expect(value("note", null)!.value).toBe("لا شيء");
+    expect(value("tags", ["a", "b"])!.value).toBe("a، b");
+    expect(value("tags", [])!.value).toBe("لا شيء");
+    expect(value("fields", ["bio", "bio"])!.value).toBeTruthy();
+    expect(value("fields", [])!.value).toBe("لا شيء");
     expect(value("extra", { a: 1 })).toMatchObject({ value: '{"a":1}', ltr: true });
-    expect(value("extra", 5).value).toBe("5");
+    expect(value("extra", 5)!.value).toBe("5");
   });
 
   it("words the coded fields", () => {
-    expect(value("license_status_after", "verified").value).toContain("مطابق");
-    expect(value("license_status", "weird").value).toBe("weird");
-    expect(value("career_stage", "resident").value).not.toBe("resident");
-    expect(value("career_stage", "odd").value).toBe("odd");
-    expect(value("alert", "sms_balance_low").value).not.toBe("sms_balance_low");
-    expect(value("alert", "new").value).toBe("new");
-    expect(value("level", "error").value).toBe("عاجل");
-    expect(value("level", "odd").value).toBe("odd");
+    expect(value("license_status_after", "verified")!.value).toContain("مطابق");
+    expect(value("license_status", "weird")!.value).toBe("weird");
+    expect(value("career_stage", "resident")!.value).not.toBe("resident");
+    expect(value("career_stage", "odd")!.value).toBe("odd");
+    expect(value("alert", "sms_balance_low")!.value).not.toBe("sms_balance_low");
+    expect(value("alert", "new")!.value).toBe("new");
+    expect(value("level", "error")!.value).toBe("عاجل");
+    expect(value("level", "odd")!.value).toBe("odd");
     expect(value("source", "card")).toMatchObject({ label: "المصدر", value: "بطاقة طبيب" });
-    expect(value("source", "public").value).toBe("نموذج الإبلاغ");
-    expect(value("scope", "full").value).toBe("السجل كاملًا");
-    expect(value("scope", "ours").value).toBe("تراخيص أطبائنا فقط");
-    expect(value("featured", "doctor").value).not.toBe("doctor");
-    expect(value("featured", "odd").value).toBe("odd");
-    expect(value("kind", "hmo").value).not.toBe("hmo");
-    expect(value("kind", "odd").value).toBe("odd");
-    expect(value("auth_sync", "updated").value).toContain("نُقل");
-    expect(value("auth_sync", "odd").value).toBe("odd");
-    expect(value("duration_ms", 2400).value).toBe("2 ثانية");
+    expect(value("source", "public")!.value).toBe("نموذج الإبلاغ");
+    expect(value("scope", "full")!.value).toBe("السجل كاملًا");
+    expect(value("scope", "ours")!.value).toBe("تراخيص أطبائنا فقط");
+    expect(value("featured", "doctor")!.value).not.toBe("doctor");
+    expect(value("featured", "odd")!.value).toBe("odd");
+    expect(value("kind", "hmo")!.value).not.toBe("hmo");
+    expect(value("kind", "odd")!.value).toBe("odd");
+    expect(value("auth_sync", "updated")!.value).toContain("نُقل");
+    expect(value("auth_sync", "odd")!.value).toBe("odd");
+    expect(value("duration_ms", 2400)!.value).toBe("2 ثانية");
   });
 
   it("resolves an institution id to its name, and shows an unknown id left to right", () => {

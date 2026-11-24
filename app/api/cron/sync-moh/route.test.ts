@@ -83,7 +83,7 @@ describe("GET /api/cron/sync-moh", () => {
     client.findAll.mockResolvedValue(rows(100, 5, 6));
     const body = await (await call()).json();
     expect(body).toMatchObject({ scope: "full", rows_upserted: 3 });
-    expect(db.argsOf("moh_practitioners", "lt")[0][0]).toBe("synced_at");
+    expect(db.argsOf("moh_practitioners", "lt")[0]![0]).toBe("synced_at");
   });
 
   it("does not trust a sweep that shrank the copy", async () => {

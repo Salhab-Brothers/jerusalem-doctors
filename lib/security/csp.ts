@@ -9,9 +9,9 @@ const TURNSTILE = "https://challenges.cloudflare.com";
 export interface CspInput {
   nonce: string;
   /** NEXT_PUBLIC_SUPABASE_URL: doctor photos load from its storage. */
-  supabaseUrl?: string;
+  supabaseUrl?: string | undefined;
   /** NEXT_PUBLIC_SENTRY_DSN: the browser reports errors to its host. */
-  sentryDsn?: string;
+  sentryDsn?: string | undefined;
   /** Off for http://localhost (the e2e stack); on everywhere served over https. */
   upgradeInsecure: boolean;
   /** `next dev` only. React evals in development to rebuild server stacks in

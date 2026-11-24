@@ -9,7 +9,7 @@ const STATE = join(__dirname, "..", ".results", "smoke-session.json");
 
 test("sign the CI account out", async ({ baseURL }) => {
   test.skip(!existsSync(STATE), "nobody signed in");
-  const ctx = await request.newContext({ baseURL, storageState: STATE });
+  const ctx = await request.newContext({ ...(baseURL ? { baseURL } : {}), storageState: STATE });
   await ctx.post("/api/auth/logout");
   await ctx.dispose();
   rmSync(STATE);

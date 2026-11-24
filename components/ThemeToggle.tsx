@@ -30,7 +30,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   }, []);
 
   const next = () => {
-    const n = THEMES[(THEMES.indexOf(choice) + 1) % THEMES.length];
+    const n = THEMES[(THEMES.indexOf(choice) + 1) % THEMES.length] ?? "auto";
     setChoice(n);
     try {
       if (n === "auto") localStorage.removeItem(THEME_KEY);

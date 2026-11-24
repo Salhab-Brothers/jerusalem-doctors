@@ -135,7 +135,7 @@ function getUpstashLimiter(key: RateLimitKey, redis: Redis): Ratelimit {
     limiter: Ratelimit.slidingWindow(def.limit, def.window),
     prefix: `rl:${key}`,
     analytics: false,
-    timeout: def.timeoutMs,
+    ...(def.timeoutMs === undefined ? {} : { timeout: def.timeoutMs }),
   });
   upstashLimiters.set(key, limiter);
   return limiter;
