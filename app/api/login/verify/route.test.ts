@@ -6,6 +6,8 @@ import { runAfter } from "@/test/after";
 import { auth, db, jsonRequest } from "@/test/fakeSupabase";
 
 const rateLimit = vi.hoisted(() => vi.fn());
+const raiseAlert = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/alerts", () => ({ raiseAlert }));
 
 vi.mock("@/lib/ratelimit", () => ({ rateLimit }));
 vi.mock("next/server", async (importOriginal) => ({
@@ -45,6 +47,18 @@ describe("POST /api/login/verify", () => {
     expect(await res.json()).toEqual({ ok: true, is_admin_approved: true });
     expect(auth.verifyOtp).toHaveBeenCalledWith({ phone: "+972501234567", token: "123456", type: "sms" });
     expect(db.argsOf("doctors", "update")).toHaveLength(0);
+  });
+
+  it("refuses an admin's phone code: no session is left behind and nothing is linked", async () => {
+    db.queue("doctors", { data: { id: "d1", is_active: true, is_admin_approved: true, auth_user_id: null, is_admin: true } });
+    const res = await call(GOOD);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ code: "admin_password_only" });
+    // Only this new session, never the admin's real ones on other devices.
+    expect(auth.signOut).toHaveBeenCalledExactlyOnceWith({ scope: "local" });
+    expect(db.argsOf("doctors", "update")).toHaveLength(0);
+    // A valid code for an admin's number is a signal: the admins are told.
+    expect(raiseAlert).toHaveBeenCalledWith(expect.anything(), "admin_phone_code_passed", expect.objectContaining({ logOnly: { doctor_id: "d1" } }));
   });
 
   it("links auth_user_id when it differs", async () => {

@@ -9,7 +9,7 @@
 
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { needsSecondFactor, type SessionClaims } from "@/lib/auth/mfa";
+import { adminSessionRefused, usedPassword, type SessionClaims } from "@/lib/auth/mfa";
 import type { Doctor } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -46,11 +46,18 @@ const sessionClaims = cache(async (): Promise<SessionClaims | undefined> => {
   return data?.claims as SessionClaims | undefined;
 });
 
-/** True when the flag is on and this is a password session that has not
- *  passed the code: it may not start an authenticator of its own, or a leaked
- *  password would be enough to claim an admin's second factor. */
+/** True when this session may not use admin powers yet: it did not begin with
+ *  a password (admins do not sign in by phone code), or it did and the flag is
+ *  on and the code has not been given. Such a session may not start an
+ *  authenticator of its own either, or a leaked password would be enough to
+ *  claim an admin's second factor. */
 export async function awaitingSecondFactor(): Promise<boolean> {
-  return !isDevUserEnabled() && needsSecondFactor(await sessionClaims());
+  return !isDevUserEnabled() && adminSessionRefused(await sessionClaims());
+}
+
+/** Whether this session began with a password. */
+export async function signedInByPassword(): Promise<boolean> {
+  return usedPassword(await sessionClaims());
 }
 
 /**
@@ -107,9 +114,10 @@ export async function requireAdmin(): Promise<Doctor> {
   const admin = await getCurrentAdmin();
   if (!admin) {
     // An admin who signed in with a password and has not given the code yet
-    // is sent to the code step; everyone else is told nothing is here.
+    // is sent to the code step; one who came by phone code, to the password
+    // sign-in; everyone else is told nothing is here.
     const doctor = await getCurrentDoctor();
-    if (doctor?.is_admin && doctor.is_active) redirect("/login/dev?code=1");
+    if (doctor?.is_admin && doctor.is_active) redirect((await signedInByPassword()) ? "/login/dev?code=1" : "/login/dev");
     const { notFound } = await import("next/navigation");
     notFound(); // throws, control never returns here
   }
@@ -117,13 +125,14 @@ export async function requireAdmin(): Promise<Doctor> {
 }
 
 /** The signed-in active admin, or null. A failed lookup throws rather than
- *  reading as "not an admin". A password session that has not passed the
- *  second factor is not an admin yet (lib/auth/mfa.ts). */
+ *  reading as "not an admin". A session that did not begin with a password, or
+ *  a password session that has not passed the second factor, is not an admin
+ *  (lib/auth/mfa.ts). */
 export async function getCurrentAdmin(): Promise<Doctor | null> {
   const doctor = await getCurrentDoctor();
   if (!doctor || !doctor.is_admin || !doctor.is_active) return null;
   // The dev shim has no token to read.
-  if (!isDevUserEnabled() && needsSecondFactor(await sessionClaims())) return null;
+  if (!isDevUserEnabled() && adminSessionRefused(await sessionClaims())) return null;
   return doctor;
 }
 

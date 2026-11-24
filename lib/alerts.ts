@@ -106,6 +106,12 @@ export const ALERTS = {
     level: "info",
     todo: "افتح «الإعدادات» ثم «الدليل» لترى أي مفتاح فُتح وماذا يغيّر. سجل النشاط يذكر من فتحه. إن لم تكونوا اتفقتم على ذلك فأغلقه من المفتاح نفسه.",
   },
+  admin_phone_code_passed: {
+    sentry: "A phone code was verified for an admin's number",
+    ar: "أُدخل رمز هاتف صحيح لرقم مشرف (رُفض الدخول)",
+    level: "warning",
+    todo: "المشرفون يدخلون بكلمة المرور فقط، ولا يُرسَل رمز إلى أرقامهم، فرُفض الدخول. لكن الرمز كان صحيحًا، أي أن أحدهم خمّنه أو وصل إلى رقم المشرف. اسأل المشرف صاحب الرقم: إن لم يكن هو فغيّر كلمة مروره، وراجع سجل النشاط، وأخبر فريق التطوير.",
+  },
   ratelimit_timeout: {
     sentry: "Rate limiter timed out (fail-open)",
     ar: "تأخر نظام حماية الطلبات، فسُمح بالطلبات دون فحص",
@@ -135,6 +141,7 @@ const PUSH_TO: Partial<Record<AlertCode, string>> = {
   number_requested: "/admin/requests",
   deletion_requested: "/admin?status=suspended",
   directory_setting_on: "/admin/settings",
+  admin_phone_code_passed: "/admin/audit",
 };
 
 /** The alerts that go to one admin at a time, in turn, so the same person is

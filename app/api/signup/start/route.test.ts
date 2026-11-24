@@ -10,7 +10,9 @@ const REGISTRY: Record<number, { first: string; family: string }> = {
 const dupeFilters: string[] = [];
 const pendingInserts: Record<string, unknown>[] = [];
 /** The doctor already holding the signup's phone, if any. */
-let phoneOwner: { id: string } | null = null;
+let phoneOwner: { id: string; is_admin?: boolean } | null = null;
+/** What the OTP send answers: the hook refuses an admin's number. */
+let otpError: { message: string } | null = null;
 /** The doctor already holding the signup's license, if any. */
 let licenseHolder: { id: string } | null = null;
 const purges: [string, string][] = [];
@@ -40,7 +42,7 @@ vi.mock("@/lib/moh/client", () => ({
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => ({
-    auth: { signInWithOtp: async () => ({ error: null }) },
+    auth: { signInWithOtp: async () => ({ error: otpError }) },
   }),
 }));
 
@@ -271,6 +273,27 @@ describe("POST /api/signup/start: a phone that already has an account", () => {
       phone_e164: "+972501234567",
       existing_doctor_id: "doc-1",
     });
+  });
+
+  it("answers an admin's number the same way even though the hook refuses to send to it", async () => {
+    vi.useFakeTimers({ now: new Date("2026-10-18T12:00:00Z"), toFake: ["Date"] });
+    phoneOwner = { id: "admin-1", is_admin: true };
+    otpError = { message: "hook refused" };
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const admin = await start({ license_number: "123456" });
+    phoneOwner = null;
+    otpError = null;
+    const fresh = await start({ license_number: "123456" });
+    expect(admin).toEqual(fresh);
+    expect(admin.status).toBe(200);
+  });
+
+  it("still answers a failed send to an ordinary owner's number with the error", async () => {
+    phoneOwner = { id: "doc-1", is_admin: false };
+    otpError = { message: "provider down" };
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await start({ license_number: "123456" })).status).toBe(502);
+    otpError = null;
   });
 
   it("answers the owner's own license exactly like an unregistered phone does", async () => {

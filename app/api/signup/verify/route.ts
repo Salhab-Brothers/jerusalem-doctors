@@ -170,9 +170,11 @@ export const POST = withJsonErrors(async (req: Request) => {
   const stored = pending.data.payload as unknown as PendingPayload | ExistingAccountPayload;
   if ("existing_doctor_id" in stored) {
     const res = await signInExisting(service, pending.data.id, stored, userId);
-    // verifyOtp already set the session cookies. A refused sign-in (inactive
-    // or vanished account) must not leave that session behind.
-    if (!res.ok) await ssr.auth.signOut();
+    // verifyOtp already set the session cookies. A refused sign-in (inactive,
+    // vanished or admin account) must not leave that session behind. Local
+    // scope: the default would end every session of that user, an admin's
+    // real ones included.
+    if (!res.ok) await ssr.auth.signOut({ scope: "local" });
     return res;
   }
   const payload = stored;
@@ -322,7 +324,7 @@ async function signInExisting(
 
   const doctor = await service
     .from("doctors")
-    .select("id, is_active, is_admin_approved, auth_user_id")
+    .select("id, is_active, is_admin_approved, auth_user_id, is_admin")
     .eq("id", payload.existing_doctor_id)
     .maybeSingle();
   if (doctor.error && doctor.error.code !== "PGRST116") throw doctor.error;
@@ -331,6 +333,11 @@ async function signInExisting(
   }
   if (!doctor.data.is_active) {
     return jsonError(403, { error: "account_inactive", code: "account_inactive" });
+  }
+  // An admin signs in by password, not by phone code (lib/auth/mfa.ts).
+  if (doctor.data.is_admin) {
+    await raiseAlert(service, "admin_phone_code_passed", { extra: { route: "signup/verify" }, logOnly: { doctor_id: doctor.data.id } });
+    return jsonError(403, { error: "admin_password_only", code: "admin_password_only" });
   }
   if (!(await linkAuthUser(service, doctor.data, userId))) {
     return jsonError(500, { error: "link_failed", code: "link_failed" });

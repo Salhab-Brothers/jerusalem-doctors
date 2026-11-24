@@ -77,14 +77,16 @@ export const POST = withJsonErrors(async (req: Request) => {
   const service = createSupabaseServiceClient();
   const found = await service
     .from("doctors")
-    .select("id, is_active, is_phone_verified")
+    .select("id, is_active, is_phone_verified, is_admin")
     .eq("phone_e164", phoneE164)
     .maybeSingle();
   if (found.error && found.error.code !== "PGRST116") throw found.error;
   // Both branches answer after the same single lookup; the send and the
   // counting happen after the response (after()), so the reply time does not
   // say whether a number has an account.
-  if (!found.data || !found.data.is_active || !found.data.is_phone_verified) {
+  // An admin does not sign in by phone code (lib/auth/mfa.ts): no code is sent,
+  // and the answer is the same as for a number with no account.
+  if (!found.data || !found.data.is_active || !found.data.is_phone_verified || found.data.is_admin) {
     // Counted (no number kept): doctors trying to log in before signing up.
     after(() => recordEvent(service, "login_unregistered"));
     return jsonOk({ ok: true, phone_e164: phoneE164 });
