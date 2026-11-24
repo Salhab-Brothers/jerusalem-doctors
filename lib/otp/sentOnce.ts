@@ -14,6 +14,7 @@
 // Upstash Redis in production (the rate limiter's), memory locally. Any Redis
 // failure lets the text go out: a duplicate is better than no code.
 
+import type { E164 } from "@/lib/normalize/phone";
 import { createHmac } from "node:crypto";
 import { Redis } from "@upstash/redis";
 
@@ -33,7 +34,7 @@ function redis(): Redis | null {
 }
 
 /** The pair's key; `secret` is SEND_SMS_HOOK_SECRET (unset only in dev). */
-export function sentKey(phoneE164: string, code: string, secret = ""): string {
+export function sentKey(phoneE164: E164, code: string, secret = ""): string {
   return PREFIX + createHmac("sha256", secret).update(`${phoneE164}:${code}`).digest("hex");
 }
 

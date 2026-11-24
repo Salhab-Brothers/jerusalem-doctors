@@ -1,5 +1,5 @@
 import { jsonNumber, parseInteger } from "@/lib/parse/number";
-import { PhoneNotSmsDeliverableError, toSmsRecipient } from "@/lib/normalize/phone";
+import { PhoneNotSmsDeliverableError, toSmsRecipient, type E164 } from "@/lib/normalize/phone";
 import { deliveryUrl, newMessageId } from "./delivery";
 import { buildOtpMessage, originHostFromEnv } from "./message";
 import {
@@ -158,7 +158,7 @@ export class Sms4FreeOtpSender implements OtpSender {
     this.apiUrl = process.env.SMS4FREE_API_URL || DEFAULT_API_URL;
   }
 
-  async send(phoneE164: string, code: string): Promise<OtpSendResult> {
+  async send(phoneE164: E164, code: string): Promise<OtpSendResult> {
     let recipient: string;
     try {
       recipient = toSmsRecipient(phoneE164);

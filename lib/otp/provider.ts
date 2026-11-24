@@ -1,3 +1,4 @@
+import type { E164 } from "@/lib/normalize/phone";
 // OTP sender interface.
 //
 // Supabase Auth owns the OTP lifecycle, it generates the code, stores it,
@@ -14,7 +15,7 @@ export interface OtpSendResult {
 
 export interface OtpSender {
   readonly name: string;
-  send(phoneE164: string, code: string): Promise<OtpSendResult>;
+  send(phoneE164: E164, code: string): Promise<OtpSendResult>;
 }
 
 export class OtpProviderError extends Error {

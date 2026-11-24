@@ -1,3 +1,4 @@
+import { tel } from "@/test/phone";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MockOtpSender } from "./mock";
 
@@ -11,7 +12,7 @@ describe("MockOtpSender", () => {
 
   it("logs the real code to stderr so devs can read it", async () => {
     const s = new MockOtpSender();
-    await s.send("+972501234567", "424242");
+    await s.send(tel("+972501234567"), "424242");
     const err = vi.mocked(console.error);
     expect(err).toHaveBeenCalledOnce();
     expect(err.mock.calls[0]?.[0]).toContain("424242");
@@ -20,7 +21,7 @@ describe("MockOtpSender", () => {
 
   it("returns a message ref referencing the phone", async () => {
     const s = new MockOtpSender();
-    const r = await s.send("+972501234567", "123456");
+    const r = await s.send(tel("+972501234567"), "123456");
     expect(r.messageRef).toBe("mock:+972501234567");
   });
 

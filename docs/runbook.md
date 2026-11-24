@@ -925,6 +925,16 @@ Setting it up, once per Supabase project:
 The smoke check records no traces, screenshots or videos: they would record
 the session and admin pages, and the repository is public.
 
+## Type and parsing guardrails
+
+JavaScript converts leniently, and TypeScript only checks what it is told, so four rules keep the sign-in and SMS code from trusting the wrong thing. `npm run lint`, `npx tsc --noEmit` and the tests enforce them.
+
+- **Stricter compiler** (`tsconfig.json`). `noUncheckedIndexedAccess`: `rows[0]` may be undefined, so use `rows.at(0)`, a guard, or `?.`. `exactOptionalPropertyTypes`: a property declared `x?: T` may be absent but not present as `undefined`; if undefined is a real value say `x?: T | undefined`, and for database arguments, updates and library options build the object with `withoutUndefined()` (`lib/withoutUndefined.ts`; JSON drops undefined, so nothing changes on the wire). In tests, `!` is fine where the element must exist.
+- **No new type assertions in production code** (`x as T`, lint rule `consistent-type-assertions`). Say the type another way: a zod schema or a type guard for what comes from outside, a better type for what we build. `as const` and `satisfies` are fine. The 141 assertions that existed when the rule arrived are listed in `eslint-suppressions.json` and tolerated; a new one fails lint. When you remove one, ESLint asks for `npx eslint --prune-suppressions`, which shrinks the list. Tests may assert freely.
+- **Numbers from outside go through `lib/parse/number.ts`**, never `Number()`: a JSON body, a header, an environment variable, a query string, another service's id. `Number("")` is 0, `Number(" 5 ")` is 5, `Number("0x10")` is 16, `Number("1e3")` is 1000, and a string compares as a number in `"5" <= 6`. `jsonNumber` takes only a real number, `parseInteger` and `parseDecimal` only plain digits; all answer `null` otherwise, and the caller decides what that means.
+- **Phone numbers that are sent to or counted per number are an `E164`** (`lib/normalize/phone.ts`): the delivery check, every sender, the hook's sent-once key, the number-prefix stats and the failure records. Only `normalizePhone()` (what a person typed) and `parseE164()` (a string that should already be E.164) make one, so a local or unnormalised number cannot reach them. Display helpers (`maskPhone`, `formatPhoneDisplay`) still take any string, because the database does not enforce the shape of `phone_e164` and a page should not fail on an old row. In tests, `tel("+972501234567")` (`test/phone.ts`) makes an `E164`; `unchecked()` only for a test of what the code does with a bad value.
+- **Checking types clean:** `tsc` keeps an incremental cache (`tsconfig.tsbuildinfo`) that once hid an error until `next build` found it. For a certain answer run `npx tsc --noEmit --incremental false`.
+
 ## Mutation testing (weekly, advisory)
 
 `.github/workflows/mutation.yml` runs Stryker (`stryker.config.json`) every Sunday and on demand (Actions, "Mutation testing", Run workflow). It makes small changes to the sign-in, code, rate-limit and proxy code (`lib/auth`, `lib/otp`, `lib/security`, `lib/api`, `lib/signup`, `proxy.ts`) and runs the unit tests against each. A change no test notices is a behaviour the tests do not pin down.

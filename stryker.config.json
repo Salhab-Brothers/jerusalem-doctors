@@ -9,6 +9,8 @@
     "lib/security/**/*.ts",
     "lib/api/**/*.ts",
     "lib/signup/**/*.ts",
+    "lib/parse/**/*.ts",
+    "lib/withoutUndefined.ts",
     "proxy.ts",
     "!**/*.test.ts"
   ],
