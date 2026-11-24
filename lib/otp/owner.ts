@@ -2,6 +2,7 @@
 // on it. Used to count a delivery report or a failed send against the person
 // without keeping the number (usage events never hold one).
 
+import type { E164 } from "@/lib/normalize/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface TextOwner {
@@ -9,7 +10,7 @@ export interface TextOwner {
   signupId?: string;
 }
 
-export async function textOwner(service: SupabaseClient, phoneE164: string): Promise<TextOwner> {
+export async function textOwner(service: SupabaseClient, phoneE164: E164): Promise<TextOwner> {
   const [doctor, signup] = await Promise.all([
     service.from("doctors").select("id").eq("phone_e164", phoneE164).maybeSingle(),
     service

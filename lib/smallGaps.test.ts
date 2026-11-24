@@ -1,6 +1,7 @@
 // The small helpers' remaining edges: wording at the number boundaries, and
 // what each read does with a database error.
 
+import { tel } from "@/test/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -80,7 +81,7 @@ describe("reads that fail", () => {
   it("throws what the database said, or nothing is trusted", async () => {
     const down = answering({ error: { message: "down" } });
     await expect(fetchAdminStats(down)).rejects.toMatchObject({ message: "down" });
-    await expect(isKnownRecipient(down, "+972501234567")).rejects.toMatchObject({ message: "down" });
+    await expect(isKnownRecipient(down, tel("+972501234567"))).rejects.toMatchObject({ message: "down" });
     await expect(fileReport(down, { source: "card", target_doctor_id: "d", details: "x" } as never)).rejects.toThrow("profile_reports insert failed: down");
     await expect(doctorByLicense(down, "123456")).rejects.toThrow("doctors read failed: down");
     await expect(readMirrorRows(down, ["123"])).rejects.toThrow("moh_practitioners read failed: down");
@@ -94,8 +95,8 @@ describe("reads that fail", () => {
   });
 
   it("reads a recipient from either table, and nothing from an empty answer", async () => {
-    expect(await isKnownRecipient(answering({ data: { id: "x" } }), "+972501234567")).toBe(true);
-    expect(await isKnownRecipient(answering({ data: null }), "+972501234567")).toBe(false);
+    expect(await isKnownRecipient(answering({ data: { id: "x" } }), tel("+972501234567"))).toBe(true);
+    expect(await isKnownRecipient(answering({ data: null }), tel("+972501234567"))).toBe(false);
     expect((await readMirrorRows(answering({ data: null }), ["123", "abc"])).size).toBe(0);
     expect((await readMirrorRows(answering({}), ["abc"])).size).toBe(0);
     await expect(saveRegistryRows(answering({ error: { message: "never called" } }), [])).resolves.toBeUndefined();

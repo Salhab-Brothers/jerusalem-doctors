@@ -36,6 +36,9 @@ describe("parseDecimal", () => {
     expect(parseDecimal("2.5")).toBe(2.5);
     expect(parseDecimal("-0.5")).toBe(-0.5);
     expect(parseDecimal("0.25")).toBe(0.25);
+    // A minus on zero is not a number worth keeping.
+    expect(Object.is(parseDecimal("-0"), 0)).toBe(true);
+    expect(Object.is(parseDecimal("-0.0"), 0)).toBe(true);
   });
 
   it("refuses the rest", () => {

@@ -2,6 +2,7 @@
 // for whom (a doctor or a signup, never the number). Logs and Sentry hold the
 // same failures, but nobody can ask them "who was it, and how often".
 
+import type { E164 } from "@/lib/normalize/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { OtpProviderError } from "./provider";
 import { textOwner } from "./owner";
@@ -23,7 +24,7 @@ export function failureReason(err: unknown): string {
 export async function recordSendFailure(
   service: SupabaseClient,
   reason: string,
-  who: { phoneE164?: string; doctorId?: string; signupId?: string } = {},
+  who: { phoneE164?: E164 | undefined; doctorId?: string | undefined; signupId?: string | undefined } = {},
 ): Promise<void> {
   try {
     const owner = who.phoneE164 ? await textOwner(service, who.phoneE164) : {};

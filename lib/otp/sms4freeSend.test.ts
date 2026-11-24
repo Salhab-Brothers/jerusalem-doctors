@@ -1,6 +1,7 @@
 // The sender and the balance read against a stand-in for SMS4FREE: what each
 // answer means for the doctor, and which failures are worth retrying.
 
+import { tel } from "@/test/phone";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OtpProviderError } from "./provider";
 import { Sms4FreeOtpSender, fetchAvailableSms } from "./sms4free";
@@ -50,7 +51,7 @@ describe("Sms4FreeOtpSender setup", () => {
 describe("Sms4FreeOtpSender.send", () => {
   it("reports the accepted count as the message reference", async () => {
     reply("1");
-    expect(await new Sms4FreeOtpSender().send("+972501234567", "123456")).toEqual({ messageRef: "sms4free:accepted:1" });
+    expect(await new Sms4FreeOtpSender().send(tel("+972501234567"), "123456")).toEqual({ messageRef: "sms4free:accepted:1" });
     const sent = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(sent).toMatchObject({ recipient: "0501234567", sender: "JDoctors" });
     expect(fetchMock.mock.calls[0]![0]).toBe("https://api.sms4free.co.il/ApiSMS/v2/SendSMS");
@@ -59,49 +60,49 @@ describe("Sms4FreeOtpSender.send", () => {
   it("ignores an empty API address setting", async () => {
     vi.stubEnv("SMS4FREE_API_URL", "");
     reply("1");
-    await new Sms4FreeOtpSender().send("+972501234567", "123456");
+    await new Sms4FreeOtpSender().send(tel("+972501234567"), "123456");
     expect(fetchMock.mock.calls[0]![0]).toBe("https://api.sms4free.co.il/ApiSMS/v2/SendSMS");
   });
 
   it("uses an API address from the environment", async () => {
     vi.stubEnv("SMS4FREE_API_URL", "https://sms.example/send");
     reply("1");
-    await new Sms4FreeOtpSender().send("+972501234567", "123456");
+    await new Sms4FreeOtpSender().send(tel("+972501234567"), "123456");
     expect(fetchMock.mock.calls[0]![0]).toBe("https://sms.example/send");
   });
 
   it("fails permanently for a number it cannot text, without calling the provider", async () => {
-    const err = await failure(new Sms4FreeOtpSender().send("+14155550123", "123456"));
+    const err = await failure(new Sms4FreeOtpSender().send(tel("+14155550123"), "123456"));
     expect(err).toMatchObject({ permanent: true, reason: "number_not_deliverable" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("calls a network failure transient, and unknown whether it was billed", async () => {
     fetchMock.mockRejectedValueOnce(new Error("timeout"));
-    expect(await failure(new Sms4FreeOtpSender().send("+972501234567", "1"))).toMatchObject({ permanent: false, reason: "sms4free_timeout" });
+    expect(await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"))).toMatchObject({ permanent: false, reason: "sms4free_timeout" });
   });
 
   it("retries a 5xx but not a 4xx", async () => {
     reply("oops", 503);
-    expect(await failure(new Sms4FreeOtpSender().send("+972501234567", "1"))).toMatchObject({ permanent: false, reason: "sms4free_http_503" });
+    expect(await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"))).toMatchObject({ permanent: false, reason: "sms4free_http_503" });
     reply("no", 403);
-    expect(await failure(new Sms4FreeOtpSender().send("+972501234567", "1"))).toMatchObject({ permanent: true, reason: "sms4free_http_403" });
+    expect(await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"))).toMatchObject({ permanent: true, reason: "sms4free_http_403" });
   });
 
   it("does not count a body it cannot read as a rejection it can name", async () => {
     reply("<html>");
-    expect(await failure(new Sms4FreeOtpSender().send("+972501234567", "1"))).toMatchObject({ permanent: false, reason: "sms4free_unreadable" });
+    expect(await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"))).toMatchObject({ permanent: false, reason: "sms4free_unreadable" });
   });
 
   it("names a documented rejection, and gives an undocumented one the provider's words", async () => {
     reply("-4");
-    expect(await failure(new Sms4FreeOtpSender().send("+972501234567", "1"))).toMatchObject({ reason: "sms4free_status_-4", permanent: true });
+    expect(await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"))).toMatchObject({ reason: "sms4free_status_-4", permanent: true });
     reply('{"status":-99,"message":"custom text"}');
-    const odd = await failure(new Sms4FreeOtpSender().send("+972501234567", "1"));
+    const odd = await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"));
     expect(odd.message).toContain("custom text");
     expect(odd.permanent).toBe(false);
     reply("-98");
-    expect((await failure(new Sms4FreeOtpSender().send("+972501234567", "1"))).message).toContain("unknown status");
+    expect((await failure(new Sms4FreeOtpSender().send(tel("+972501234567"), "1"))).message).toContain("unknown status");
   });
 });
 

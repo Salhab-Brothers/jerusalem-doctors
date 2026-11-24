@@ -1,3 +1,4 @@
+import type { E164 } from "@/lib/normalize/phone";
 import {
   type OtpSendResult,
   type OtpSender,
@@ -82,7 +83,7 @@ export class WhatsAppMetaOtpSender implements OtpSender {
     this.languageCode = process.env.META_AUTH_TEMPLATE_LANG ?? "ar";
   }
 
-  async send(phoneE164: string, code: string): Promise<OtpSendResult> {
+  async send(phoneE164: E164, code: string): Promise<OtpSendResult> {
     const url = `https://graph.facebook.com/${GRAPH_VERSION}/${this.phoneNumberId}/messages`;
     const payload = buildAuthTemplatePayload(
       phoneE164,

@@ -5,10 +5,11 @@
 // progress), but a direct call would skip them. The hook re-checks here, so
 // only a registered doctor or a number with a live signup ever gets an SMS.
 
+import type { E164 } from "@/lib/normalize/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Throws when the database cannot answer; the hook then fails closed. */
-export async function isKnownRecipient(service: SupabaseClient, e164: string): Promise<boolean> {
+export async function isKnownRecipient(service: SupabaseClient, e164: E164): Promise<boolean> {
   const [doctor, pending] = await Promise.all([
     service.from("doctors").select("id").eq("phone_e164", e164).eq("is_active", true).limit(1).maybeSingle(),
     service

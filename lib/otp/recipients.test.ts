@@ -1,3 +1,4 @@
+import { tel } from "@/test/phone";
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isKnownRecipient } from "./recipients";
@@ -26,27 +27,27 @@ function fake(rows: { doctors?: boolean; pending?: boolean; error?: string; erro
 
 describe("isKnownRecipient", () => {
   it("accepts an open account or a signup that has not expired", async () => {
-    expect(await isKnownRecipient(fake({ doctors: true }).client, "+972501234567")).toBe(true);
-    expect(await isKnownRecipient(fake({ pending: true }).client, "+972501234567")).toBe(true);
+    expect(await isKnownRecipient(fake({ doctors: true }).client, tel("+972501234567"))).toBe(true);
+    expect(await isKnownRecipient(fake({ pending: true }).client, tel("+972501234567"))).toBe(true);
   });
 
   it("refuses everyone else", async () => {
-    expect(await isKnownRecipient(fake({}).client, "+972501234567")).toBe(false);
+    expect(await isKnownRecipient(fake({}).client, tel("+972501234567"))).toBe(false);
   });
 
   it("only counts open accounts and live signups", async () => {
     const { client, calls } = fake({});
-    await isKnownRecipient(client, "+972501234567");
+    await isKnownRecipient(client, tel("+972501234567"));
     expect(calls).toContainEqual({ table: "doctors", method: "eq", args: ["is_active", true] });
     expect(calls.find((c) => c.table === "pending_signups" && c.method === "gt")?.args[0]).toBe("expires_at");
   });
 
   it("throws rather than guessing when the database fails", async () => {
-    await expect(isKnownRecipient(fake({ error: "down" }).client, "+972501234567")).rejects.toBeTruthy();
+    await expect(isKnownRecipient(fake({ error: "down" }).client, tel("+972501234567"))).rejects.toBeTruthy();
   });
 
   it("throws when either lookup fails, whatever the other one found", async () => {
-    await expect(isKnownRecipient(fake({ pending: true, error: "down", errorTable: "doctors" }).client, "+972501234567")).rejects.toMatchObject({ message: "down" });
-    await expect(isKnownRecipient(fake({ doctors: true, error: "down", errorTable: "pending_signups" }).client, "+972501234567")).rejects.toMatchObject({ message: "down" });
+    await expect(isKnownRecipient(fake({ pending: true, error: "down", errorTable: "doctors" }).client, tel("+972501234567"))).rejects.toMatchObject({ message: "down" });
+    await expect(isKnownRecipient(fake({ doctors: true, error: "down", errorTable: "pending_signups" }).client, tel("+972501234567"))).rejects.toMatchObject({ message: "down" });
   });
 });

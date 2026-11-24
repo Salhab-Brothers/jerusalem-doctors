@@ -1,3 +1,4 @@
+import { tel } from "@/test/phone";
 import { createServer } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Sms4FreeOtpSender, fetchAvailableSms } from "./sms4free";
@@ -32,7 +33,7 @@ beforeAll(async () => {
 
 afterAll(() => server.close());
 
-const send = () => sender.send("+972501234567", "012345");
+const send = () => sender.send(tel("+972501234567"), "012345");
 
 describe("Sms4FreeOtpSender over HTTP", () => {
   it("accepts status 1 and sends the right payload", async () => {
@@ -97,7 +98,7 @@ describe("Sms4FreeOtpSender over HTTP", () => {
 
   it("refuses a +970 number without touching the network", async () => {
     lastRequest = null;
-    await expect(sender.send("+970599123456", "012345")).rejects.toMatchObject({
+    await expect(sender.send(tel("+970599123456"), "012345")).rejects.toMatchObject({
       permanent: true,
     });
     expect(lastRequest).toBeNull();

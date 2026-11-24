@@ -1,3 +1,4 @@
+import { tel } from "@/test/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/test/fakeSupabase";
@@ -32,7 +33,7 @@ describe("recordSendFailure", () => {
   it("counts a doctor's failure against the doctor, with the reason and no number", async () => {
     db.queue("doctors", { data: { id: "doc-1" } });
     db.queue("pending_signups", { data: null });
-    await recordSendFailure(service, "daily_cap", { phoneE164: "+972501234567" });
+    await recordSendFailure(service, "daily_cap", { phoneE164: tel("+972501234567") });
     expect(db.argsOf("usage_events", "insert")).toEqual([
       [{ kind: "sms_failed", doctor_id: "doc-1", meta: { reason: "daily_cap", prefix: "050" } }],
     ]);
@@ -41,7 +42,7 @@ describe("recordSendFailure", () => {
   it("counts a signup's failure against the signup", async () => {
     db.queue("doctors", { data: null });
     db.queue("pending_signups", { data: { id: "signup-1" } });
-    await recordSendFailure(service, "sms4free_timeout", { phoneE164: "+972501234567" });
+    await recordSendFailure(service, "sms4free_timeout", { phoneE164: tel("+972501234567") });
     expect(db.argsOf("usage_events", "insert")).toEqual([
       [{ kind: "sms_failed", doctor_id: null, meta: { reason: "sms4free_timeout", prefix: "050", signup: "signup-1" } }],
     ]);
@@ -50,7 +51,7 @@ describe("recordSendFailure", () => {
   it("records the reason alone for a number nobody holds", async () => {
     db.queue("doctors", { data: null });
     db.queue("pending_signups", { data: null });
-    await recordSendFailure(service, "unknown", { phoneE164: "+972501234567" });
+    await recordSendFailure(service, "unknown", { phoneE164: tel("+972501234567") });
     expect(db.argsOf("usage_events", "insert")).toEqual([[{ kind: "sms_failed", doctor_id: null, meta: { reason: "unknown", prefix: "050" } }]]);
   });
 });
@@ -64,7 +65,7 @@ describe("recordSendFailure when recording itself fails", () => {
         throw boom;
       },
     } as unknown as SupabaseClient;
-    await expect(recordSendFailure(broken, "daily_cap", { phoneE164: "+972501234567" })).resolves.toBeUndefined();
+    await expect(recordSendFailure(broken, "daily_cap", { phoneE164: tel("+972501234567") })).resolves.toBeUndefined();
     expect(log).toHaveBeenCalledWith("[otp] failure not recorded", boom);
     log.mockRestore();
   });

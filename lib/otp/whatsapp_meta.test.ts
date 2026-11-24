@@ -1,3 +1,4 @@
+import { tel } from "@/test/phone";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WhatsAppMetaOtpSender, buildAuthTemplatePayload } from "./whatsapp_meta";
 
@@ -71,18 +72,18 @@ describe("WhatsAppMetaOtpSender", () => {
   it("is permanent for 400 to 499 and transient outside it, whatever the body", async () => {
     for (const [status, permanent] of [[400, true], [404, true], [499, true], [399, false], [500, false], [503, false]] as const) {
       fetchMock.mockResolvedValue(new Response("x", { status }));
-      await expect(new WhatsAppMetaOtpSender().send("+972501234567", "1"), String(status)).rejects.toMatchObject({ permanent });
+      await expect(new WhatsAppMetaOtpSender().send(tel("+972501234567"), "1"), String(status)).rejects.toMatchObject({ permanent });
     }
   });
 
   it("returns an empty ref when Meta answers with no messages at all", async () => {
     fetchMock.mockResolvedValue(Response.json({ messages: [] }));
-    expect(await new WhatsAppMetaOtpSender().send("+972501234567", "1")).toEqual({ messageRef: "" });
+    expect(await new WhatsAppMetaOtpSender().send(tel("+972501234567"), "1")).toEqual({ messageRef: "" });
   });
 
   it("posts the template and returns Meta's message id", async () => {
     fetchMock.mockResolvedValue(Response.json({ messages: [{ id: "wamid.1" }] }));
-    expect(await new WhatsAppMetaOtpSender().send("+972501234567", "123456")).toEqual({ messageRef: "wamid.1" });
+    expect(await new WhatsAppMetaOtpSender().send(tel("+972501234567"), "123456")).toEqual({ messageRef: "wamid.1" });
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("https://graph.facebook.com/v21.0/pn1/messages");
     expect(init.headers.Authorization).toBe("Bearer tok");
@@ -91,17 +92,17 @@ describe("WhatsAppMetaOtpSender", () => {
 
   it("returns an empty ref when Meta omits the id", async () => {
     fetchMock.mockResolvedValue(Response.json({}));
-    expect(await new WhatsAppMetaOtpSender().send("+972501234567", "1")).toEqual({ messageRef: "" });
+    expect(await new WhatsAppMetaOtpSender().send(tel("+972501234567"), "1")).toEqual({ messageRef: "" });
   });
 
   it("treats a network failure as transient", async () => {
     fetchMock.mockRejectedValue(new Error("offline"));
-    await expect(new WhatsAppMetaOtpSender().send("+972501234567", "1")).rejects.toMatchObject({ permanent: false });
+    await expect(new WhatsAppMetaOtpSender().send(tel("+972501234567"), "1")).rejects.toMatchObject({ permanent: false });
   });
 
   it("treats a 4xx as permanent and keeps Meta's error", async () => {
     fetchMock.mockResolvedValue(Response.json({ error: { code: 132000, message: "params" } }, { status: 400 }));
-    await expect(new WhatsAppMetaOtpSender().send("+972501234567", "1")).rejects.toMatchObject({
+    await expect(new WhatsAppMetaOtpSender().send(tel("+972501234567"), "1")).rejects.toMatchObject({
       permanent: true,
       message: expect.stringContaining("132000: params"),
     });
@@ -109,7 +110,7 @@ describe("WhatsAppMetaOtpSender", () => {
 
   it("treats a 5xx with no JSON body as transient", async () => {
     fetchMock.mockResolvedValue(new Response("oops", { status: 502 }));
-    await expect(new WhatsAppMetaOtpSender().send("+972501234567", "1")).rejects.toMatchObject({
+    await expect(new WhatsAppMetaOtpSender().send(tel("+972501234567"), "1")).rejects.toMatchObject({
       permanent: false,
       message: expect.stringContaining("status 502"),
     });
