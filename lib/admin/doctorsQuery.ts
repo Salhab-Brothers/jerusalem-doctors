@@ -5,6 +5,8 @@
 // away, so the filter key keeps its old values: links from /admin/stats and
 // from the activity log still mean what they meant.
 
+import { parseInteger } from "@/lib/parse/number";
+
 export const ADMIN_PAGE_SIZE = 25;
 
 /** `attention`: a non-zero count is work waiting for an admin. The bar shows
@@ -70,12 +72,12 @@ export function panelHref(base: string, doctorId: string, opts: { edit?: boolean
 
 export function parseAdminDoctorsParams(sp: RawParams): AdminDoctorsParams {
   const status = one(sp.status);
-  const rawPage = Number(one(sp.page));
+  const rawPage = parseInteger(one(sp.page));
 
   return {
     filter: FILTER_KEYS.includes(status) ? (status as DoctorFilter) : DEFAULT_FILTER,
     q: one(sp.q).trim().slice(0, 100),
-    page: Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1,
+    page: rawPage !== null && rawPage >= 1 ? rawPage : 1,
     doctorId: readDoctorParam(sp),
     editing: readEditParam(sp),
   };

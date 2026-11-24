@@ -12,6 +12,7 @@
 // secret: only a caller that knows it can file a report. The message id
 // carries its own send time, so no store is needed to time the delivery.
 
+import { parseInteger } from "@/lib/parse/number";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 export const DELIVERY_PATH = "/api/sms/delivery";
@@ -46,6 +47,6 @@ export const newMessageId = (now: number = Date.now()) => `${now}-${randomBytes(
 
 /** Seconds from send to report, or null for an id that isn't ours. */
 export function deliveryDelaySeconds(msgId: string | null, now: number = Date.now()): number | null {
-  const sent = Number(msgId?.match(/^(\d{13})-[0-9a-f]{8}$/)?.[1]);
-  return Number.isFinite(sent) && sent > 0 && sent <= now ? Math.round((now - sent) / 1000) : null;
+  const sent = parseInteger(msgId?.match(/^(\d{13})-[0-9a-f]{8}$/)?.[1]);
+  return sent !== null && sent > 0 && sent <= now ? Math.round((now - sent) / 1000) : null;
 }

@@ -30,6 +30,19 @@ describe("buildSendPayload", () => {
   });
 });
 
+describe("parseSendResponse: only plain numbers count as one", () => {
+  it("reads a bare integer, and a status that is a JSON number", () => {
+    expect(parseSendResponse(" -4 ")).toEqual({ status: -4 });
+    expect(parseSendResponse('{"status":-6}')).toEqual({ status: -6, message: undefined });
+  });
+
+  it("does not take JavaScript's other readings of a number", () => {
+    for (const body of ["1e2", "4.0", "+4", "0x10", "1_0", "Infinity", "NaN", '{"status":"4"}', '{"status":null}', '{"status":true}', '{"status":[4]}', "null", "[]"]) {
+      expect(parseSendResponse(body), body).toBeNull();
+    }
+  });
+});
+
 describe("parseSendResponse", () => {
   it("reads the documented JSON object", () => {
     expect(parseSendResponse('{"status":1,"message":"OK"}')).toEqual({

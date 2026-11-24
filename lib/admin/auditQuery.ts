@@ -1,6 +1,7 @@
 // Reading the /admin/audit filters from the URL, so a filtered view can be
 // bookmarked, shared, and paged through without losing the filter.
 
+import { parseInteger } from "@/lib/parse/number";
 import { AUDIT_ACTIONS } from "@/lib/auditText";
 import type { RawParams } from "@/lib/admin/doctorsQuery";
 
@@ -31,14 +32,14 @@ function day(v: string): string {
 
 export function parseAuditParams(sp: RawParams): AuditParams {
   const action = one(sp.action);
-  const page = Math.floor(Number(one(sp.page)));
+  const page = parseInteger(one(sp.page));
   return {
     action: AUDIT_ACTIONS.includes(action) ? action : "",
     q: one(sp.q).slice(0, 100),
     from: day(one(sp.from)),
     to: day(one(sp.to)),
     people: one(sp.people) === "1",
-    page: Number.isFinite(page) && page >= 1 ? page : 1,
+    page: page !== null && page >= 1 ? page : 1,
   };
 }
 

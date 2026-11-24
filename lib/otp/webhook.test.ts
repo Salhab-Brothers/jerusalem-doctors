@@ -138,9 +138,11 @@ describe("verifySendSmsHook: the edges", () => {
     expect(verify(h)).toBe(false);
   });
 
-  it("refuses a timestamp that is not a number, even when it is signed", () => {
-    const h = headers({ "webhook-timestamp": "soon", "webhook-signature": signed(ID, "soon") });
-    expect(verify(h)).toBe(false);
+  it("refuses a timestamp that is not whole seconds, even when it is signed", () => {
+    for (const ts of ["soon", `${TS}.5`, ` ${TS}`, `${TS} `, `0x${TS.toString(16)}`, `${TS}e0`, `+${TS}`]) {
+      const h = headers({ "webhook-timestamp": ts, "webhook-signature": signed(ID, ts) });
+      expect(verify(h), ts).toBe(false);
+    }
   });
 
   it("refuses a secret that decodes to no key at all, even when the request is signed with that empty key", () => {
