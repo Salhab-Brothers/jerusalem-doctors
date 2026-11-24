@@ -195,6 +195,13 @@ describe("resolveIlLicense", () => {
     expect(r.result.status).toBe("verified");
   });
 
+  it("skips a candidate that is not a plain number and goes on to the next", async () => {
+    const { client, lookups } = mirrorOf([{ ...MIRROR_ROW, license_number: 23456 }]);
+    const r = await resolveIlLicense(client, { candidates: ["abc", "1e3", "23456"], ...NAMES }, offline);
+    expect(r.serial).toBe("23456");
+    expect(lookups).toEqual([23456]);
+  });
+
   it("prefers the as-typed serial when it verifies, without a second lookup", async () => {
     const { client, lookups } = mirrorOf([
       { ...MIRROR_ROW, license_number: 123456 },
@@ -378,6 +385,15 @@ describe("verifyLicense failures", () => {
 describe("resolveIlLicense", () => {
   it("has nothing to resolve without candidates", async () => {
     await expect(resolveIlLicense(fakeSupabase(null), { candidates: [], hebrewFirstName: "א", hebrewFamilyName: "ב" })).rejects.toThrow("no candidates");
+  });
+
+  it("has nothing to resolve when no candidate is a plain number, and looks up none of them", async () => {
+    const lookups = vi.fn();
+    const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => (lookups(), { data: null, error: null }) }) }) }) } as unknown as SupabaseClient;
+    for (const candidates of [["abc"], ["1e3"], ["12.5"], [" 7"], ["0x10", ""], ["123456789012345678"]]) {
+      await expect(resolveIlLicense(client, { candidates, hebrewFirstName: "א", hebrewFamilyName: "ב" }), candidates.join()).rejects.toThrow("no candidates");
+    }
+    expect(lookups).not.toHaveBeenCalled();
   });
 });
 

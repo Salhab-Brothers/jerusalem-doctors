@@ -12,8 +12,8 @@ import { signSendSmsHook } from "@/lib/otp/webhook";
 
 const send = vi.fn();
 
-const { captureMessage } = vi.hoisted(() => ({ captureMessage: vi.fn() }));
-vi.mock("@sentry/nextjs", () => ({ captureException: vi.fn(), captureMessage }));
+const { captureMessage, captureException } = vi.hoisted(() => ({ captureMessage: vi.fn(), captureException: vi.fn() }));
+vi.mock("@sentry/nextjs", () => ({ captureException, captureMessage }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   after: (await import("@/test/after")).deferAfter,
@@ -89,6 +89,7 @@ describe("send-otp hook route", () => {
     budgetLeft = true;
     remaining = 150;
     captureMessage.mockClear();
+    captureException.mockClear();
   });
 
   describe("who gets a code", () => {
@@ -212,6 +213,15 @@ describe("send-otp hook route", () => {
       expect(res.headers.get("content-type")).toContain("application/json");
       expect(send).not.toHaveBeenCalled();
     }
+    // Each one is reported, as a payload Supabase should never send.
+    expect(captureException).toHaveBeenCalledTimes(4);
+    expect(captureException.mock.calls[0]![0]).toEqual(expect.objectContaining({ message: expect.stringContaining("not in E.164 form") }));
+  });
+
+  it("does not report to Sentry for an ordinary phone", async () => {
+    const { POST } = await import("./route");
+    expect((await POST(hookRequest(PAYLOAD))).status).toBe(200);
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it("answers 400 without retry on a permanent provider failure", async () => {

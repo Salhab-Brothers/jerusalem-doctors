@@ -114,9 +114,17 @@
       "count": 1
     }
   },
+  "app/api/profile/password/route.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
+    }
+  },
   "app/api/signup/start/route.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
+    },
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 6
     }
   },
   "app/api/signup/verify/route.ts": {
@@ -237,6 +245,9 @@
   "lib/auth/session.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
+    },
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 1
     }
   },
   "lib/careerStage.ts": {
@@ -324,9 +335,34 @@
       "count": 1
     }
   },
+  "lib/supabase/browser.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
+    }
+  },
+  "lib/supabase/server.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
+    }
+  },
+  "lib/supabase/service.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
+    }
+  },
   "lib/turnstile.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
+    }
+  },
+  "lib/vcard.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 1
+    }
+  },
+  "proxy.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
     }
   }
 }

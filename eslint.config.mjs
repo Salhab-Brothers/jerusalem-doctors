@@ -15,17 +15,21 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/await-thenable": "error",
     },
   },
-  // A type assertion (`x as T`) tells the compiler something it cannot check, so
-  // a wrong one is a bug the types then hide. Production code states the type
-  // another way: a zod schema or a type guard for what comes from outside, a
-  // generic or a better type for what we build. `as const` and `satisfies` are
-  // fine. The assertions that were here when this rule arrived are recorded in
-  // eslint-suppressions.json and tolerated; a new one fails the lint. Fixing one
-  // makes ESLint ask for `npx eslint --prune-suppressions`, which shrinks the list.
+  // A type assertion (`x as T`) or a non-null assertion (`x!`) tells the compiler
+  // something it cannot check, so a wrong one is a crash or a bug the types then
+  // hide. Production code states the type another way: a zod schema or a type
+  // guard for what comes from outside, a generic or a better type for what we
+  // build, a check or a `?.` for a value that may be missing. `as const` and
+  // `satisfies` are fine. The ones that were here when these rules arrived are
+  // recorded in eslint-suppressions.json and tolerated; a new one fails the
+  // lint. Fixing one makes ESLint ask for `npm run lint:prune`, which shrinks the list.
   {
     files: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "proxy.ts"],
     ignores: ["**/*.test.{ts,tsx}"],
-    rules: { "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }] },
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
+      "@typescript-eslint/no-non-null-assertion": "error",
+    },
   },
   // Who is in the directory is the `listed_doctors` view (#158): the five
   // conditions are written once, in the database. Reading the doctors table
