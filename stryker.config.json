@@ -13,8 +13,7 @@
     "!**/*.test.ts"
   ],
   "mutator": { "excludedMutations": ["StringLiteral"] },
-    "incremental": true,
-  "reporters": ["clear-text", "html", "json"],
+    "reporters": ["clear-text", "html", "json"],
   "clearTextReporter": { "reportScoreTable": true, "skipFull": true, "maxTestsToLog": 0, "allowColors": false },
   "thresholds": { "high": 98, "low": 96, "break": 95 },
   "ignorePatterns": [".next", ".worktrees", "coverage", ".env*", ".local-secrets", ".claude"],
