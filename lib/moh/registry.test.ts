@@ -45,8 +45,8 @@ describe("toRegistryRows", () => {
       row({ "שם התמחות": "פנימית", "תאריך רישום התמחות": 1012010 }),
       row({ "שם התמחות": "  " }),
     ]);
-    expect(r.specialties).toEqual(["פנימית"]);
-    expect(r.specialty_name_he).toBe("פנימית");
+    expect(r!.specialties).toEqual(["פנימית"]);
+    expect(r!.specialty_name_he).toBe("פנימית");
   });
 
   it("gives a licence with no certificate no specialty", () => {
@@ -67,6 +67,6 @@ describe("toRegistryRows: certificate order", () => {
       row({ "שם התמחות": "א" }),
       row({ "שם התמחות": "ג", "תאריך רישום התמחות": 1012015 }),
     ]);
-    expect(rows[0].specialties).toEqual(["א", "ג", "ב"]);
+    expect(rows[0]!.specialties).toEqual(["א", "ג", "ב"]);
   });
 });

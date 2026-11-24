@@ -50,7 +50,7 @@ export function SignupForm({
 }: {
   specialties: Specialty[];
   /** A reminder's link reopening an unfinished signup (lib/signup/unfinished.ts). */
-  initial?: FormState;
+  initial?: FormState | undefined;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(initial ?? INITIAL);

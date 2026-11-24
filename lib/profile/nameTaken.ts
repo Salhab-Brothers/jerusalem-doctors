@@ -21,7 +21,7 @@ const fullName = (first: string, family: string) => normalizeArabic(`${first} ${
 export async function nameTakenByAnother(
   service: SupabaseClient,
   me: Self,
-  parsed: { arabic_first_name?: string; arabic_family_name?: string },
+  parsed: { arabic_first_name?: string | undefined; arabic_family_name?: string | undefined },
 ): Promise<boolean> {
   if (!me.is_admin_approved) return false;
   const next = fullName(parsed.arabic_first_name ?? me.arabic_first_name, parsed.arabic_family_name ?? me.arabic_family_name);

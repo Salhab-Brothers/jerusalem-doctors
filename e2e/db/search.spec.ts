@@ -75,8 +75,8 @@ test("a filter and a term both apply", async () => {
 test("stops at the limit and carries the card's specialties and workplaces", async () => {
   expect(await search({ p_limit: 2 })).toHaveLength(2);
   const [samer] = await search({ p_term: "سامر" });
-  expect(samer.doctor_specialties.map((s) => s.specialty.name_ar)).toEqual(["القلب"]);
-  expect(samer.doctor_workplaces.map((w) => w.name).sort()).toEqual(["المقاصد", "عيادة القلب في بيت حنينا"].sort());
+  expect(samer!.doctor_specialties.map((s) => s.specialty.name_ar)).toEqual(["القلب"]);
+  expect(samer!.doctor_workplaces.map((w) => w.name).sort()).toEqual(["المقاصد", "عيادة القلب في بيت حنينا"].sort());
 });
 
 test("the filter panel: workplace, kind of workplace, career stage, looking for work", async () => {

@@ -69,7 +69,7 @@ const fail = (f: SaveFailure) =>
   jsonError(f.status, { error: f.code, code: f.code, fields: f.fields });
 
 /** GoTrue answers a taken number with a 422 rather than a SQLSTATE. */
-const isTakenByAuth = (err: { status?: number; message?: string }) =>
+const isTakenByAuth = (err: { status?: number | undefined; message?: string | undefined }) =>
   err.status === 422 || /already|exists|registered/i.test(err.message ?? "");
 
 export const PATCH = withJsonErrors(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {

@@ -28,7 +28,7 @@ export function MfaSection() {
   }, []);
 
   const post = (url: string, body?: unknown) =>
-    fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
 
   const start = async () => {
     setBusy(true);

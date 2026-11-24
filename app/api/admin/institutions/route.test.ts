@@ -44,11 +44,11 @@ describe("admin institutions API", () => {
       jsonRequest("/api/admin/institutions", { name_ar: "مستشفى الهلال الأحمر", kind: "hospital", aliases: ["الهلال"] }),
     );
     expect(await res.json()).toEqual({ ok: true, id: "inst-9", linked: 3 });
-    expect(db.argsOf("institutions", "insert")[0][0]).toMatchObject({ name_ar: "مستشفى الهلال الأحمر", name_he: null });
+    expect(db.argsOf("institutions", "insert")[0]![0]).toMatchObject({ name_ar: "مستشفى الهلال الأحمر", name_he: null });
     expect(relinkWorkplaces).toHaveBeenCalled();
     // Search reads the list from a cache; it must see the new one.
     expect(institutionsChanged).toHaveBeenCalled();
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ action: "institution_created" });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ action: "institution_created" });
   });
 
   it("reports a duplicate name as 409", async () => {
@@ -63,7 +63,7 @@ describe("admin institutions API", () => {
     const { PATCH } = await import("./[id]/route");
     const res = await PATCH(jsonRequest("/api/admin/institutions/inst-1", { add_alias: "شعري تسيدك" }), ctx);
     expect(res.status).toBe(200);
-    expect(db.argsOf("institutions", "update")[0][0]).toEqual({ aliases: ["شعري تسيدك"] });
+    expect(db.argsOf("institutions", "update")[0]![0]).toEqual({ aliases: ["شعري تسيدك"] });
     expect(relinkWorkplaces).toHaveBeenCalled();
     expect(await res.json()).toMatchObject({ still_unlinked: false });
   });
@@ -107,14 +107,14 @@ describe("admin institutions API", () => {
     const { PATCH } = await import("./[id]/route");
     const res = await PATCH(jsonRequest("/api/admin/institutions/inst-1", { name_ar: "اسم جديد", name_he: "", kind: "hmo" }), ctx);
     expect(res.status).toBe(200);
-    expect(db.argsOf("institutions", "update")[0][0]).toEqual({ name_ar: "اسم جديد", name_he: null, kind: "hmo" });
+    expect(db.argsOf("institutions", "update")[0]![0]).toEqual({ name_ar: "اسم جديد", name_he: null, kind: "hmo" });
   });
 
   it("keeps the Hebrew name when it is not in the body", async () => {
     db.queue("institutions", { data: { aliases: [] } }, {});
     const { PATCH } = await import("./[id]/route");
     await PATCH(jsonRequest("/api/admin/institutions/inst-1", { kind: "hospital" }), ctx);
-    expect(db.argsOf("institutions", "update")[0][0]).toEqual({ kind: "hospital" });
+    expect(db.argsOf("institutions", "update")[0]![0]).toEqual({ kind: "hospital" });
   });
 
   it("refuses a non-admin, a bad body, a missing institution and a duplicate name on edit", async () => {

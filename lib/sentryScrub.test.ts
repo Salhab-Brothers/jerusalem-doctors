@@ -152,7 +152,7 @@ describe("gaps a third review found", () => {
       exception: { values: [{ type: "Error", value: 'invalid input syntax for type uuid: "MSGNAME"', mechanism: { type: "generic", handled: true, synthetic: true } }] },
       extra: { __serialized__: { code: "22P02", message: 'invalid input syntax for type uuid: "MSGNAME"' } },
     } as unknown as ErrorEvent);
-    expect(event.exception?.values?.[0].value).toBe("captured object (code 22P02)");
+    expect(event.exception?.values?.[0]!.value).toBe("captured object (code 22P02)");
     expect(JSON.stringify(event)).not.toContain("MSGNAME");
   });
 
@@ -180,7 +180,7 @@ describe("browser breadcrumbs", () => {
 describe("edges of the scrubbers", () => {
   it("scrubs an Error with no stack, and a span with no attributes or no name", () => {
     const err = new Error("call 0501234567");
-    err.stack = undefined;
+    delete err.stack;
     expect(JSON.stringify(scrubPii(err))).not.toContain("0501234567");
     expect(scrubSpan({ name: "GET /x?q=سارة" }).name).toBe("GET /x");
     expect(scrubSpan({ attributes: { "http.url": "https://x/y?q=1", other: 5 } }).attributes).toEqual({ "http.url": "https://x/y", other: 5 });

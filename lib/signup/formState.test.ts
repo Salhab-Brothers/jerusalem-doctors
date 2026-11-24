@@ -43,7 +43,7 @@ describe("applyStage", () => {
     expect(next.subspecialty).toBe("");
     expect(next.certificates).toEqual(["ACLS"]);
     expect(next.residency_start_year).toBe("");
-    expect(next.workplaces[0].workplace_type).toBe("clinic");
+    expect(next.workplaces[0]!.workplace_type).toBe("clinic");
   });
 
   it("general with no الطب العام row leaves the specialties empty", () => {
@@ -99,13 +99,13 @@ describe("applyStage and the workplace rows", () => {
 
   it("treats a name of only spaces as untouched, so the row adopts the stage's default type", () => {
     expect(STAGE_BY_KEY.general.defaultWorkplaceType).toBe("clinic");
-    expect(applyStage(form(row("   ", "hospital")), "general", null).workplaces[0].workplace_type).toBe("clinic");
+    expect(applyStage(form(row("   ", "hospital")), "general", null).workplaces[0]!.workplace_type).toBe("clinic");
   });
 
   it("leaves a row the doctor has named alone when the new stage offers its type", () => {
     expect(STAGE_BY_KEY.specialist.workplaceTypes).toContain("clinic");
     expect(STAGE_BY_KEY.specialist.defaultWorkplaceType).toBe("hospital");
-    expect(applyStage(form(row("عيادة د. سلهب", "clinic")), "specialist", null).workplaces[0].workplace_type).toBe("clinic");
+    expect(applyStage(form(row("عيادة د. سلهب", "clinic")), "specialist", null).workplaces[0]!.workplace_type).toBe("clinic");
   });
 });
 

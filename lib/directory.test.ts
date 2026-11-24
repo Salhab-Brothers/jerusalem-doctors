@@ -29,12 +29,12 @@ const ROW = {
 describe("toSearchHits", () => {
   it("defaults the 0013 columns and puts the primary workplace first", () => {
     const [hit] = toSearchHits([ROW]);
-    expect(hit.certificates).toEqual([]);
-    expect(hit.seeking_work).toBe(false);
-    expect(hit.retired).toBe(false);
-    expect(hit.has_contact).toBe(false);
-    expect(hit.workplaces.map((w) => w.name)).toEqual(["أ", "ب"]);
-    expect(hit.specialties).toEqual(["الطب العام"]);
+    expect(hit!.certificates).toEqual([]);
+    expect(hit!.seeking_work).toBe(false);
+    expect(hit!.retired).toBe(false);
+    expect(hit!.has_contact).toBe(false);
+    expect(hit!.workplaces.map((w) => w.name)).toEqual(["أ", "ب"]);
+    expect(hit!.specialties).toEqual(["الطب العام"]);
   });
 
   it("never passes the license number on to the browser", () => {
@@ -44,7 +44,7 @@ describe("toSearchHits", () => {
 
   it("says there is something to reveal, but never carries a number or an email (#16)", () => {
     const [hit] = toSearchHits([{ ...ROW, phone_display: "050-123-4567", phone_e164: "+972501234567", email: "ahmad@example.test" }]);
-    expect(hit.has_contact).toBe(true);
+    expect(hit!.has_contact).toBe(true);
     const json = JSON.stringify(hit);
     for (const secret of ["050-123-4567", "972501234567", "ahmad@example.test"]) expect(json).not.toContain(secret);
   });
@@ -56,7 +56,7 @@ describe("toSearchHits", () => {
   it("carries the numbers on the card only when asked to, and only for a doctor who has any", () => {
     const withNumbers = { ...ROW, phone_display: "050-123-4567", phone_e164: "+972501234567", email: "ahmad@example.test" };
     const [hit] = toSearchHits([withNumbers], true);
-    expect(hit.contact).toEqual({
+    expect(hit!.contact).toEqual({
       phone_display: "050-123-4567",
       phone_e164: "+972501234567",
       email: "ahmad@example.test",
@@ -68,7 +68,7 @@ describe("toSearchHits", () => {
 });
 
 describe("withContacts", () => {
-  const hit = (id: string, has_contact: boolean) => ({ ...toSearchHits([{ ...ROW, id }])[0], has_contact });
+  const hit = (id: string, has_contact: boolean) => ({ ...toSearchHits([{ ...ROW, id }])[0]!, has_contact });
   const client = (result: { data: unknown; error: unknown }) => {
     const inFn = vi.fn(async () => result);
     const select = vi.fn(() => ({ in: inFn }));
@@ -80,7 +80,7 @@ describe("withContacts", () => {
     const out = await withContacts(service as never, [hit("a", true), hit("b", true)]);
     expect(service.from).toHaveBeenCalledWith("listed_doctors");
     expect(service.inFn).toHaveBeenCalledWith("id", ["a", "b"]);
-    expect(out[0].contact).toMatchObject({ phone_display: "050-1", phone_e164: "+972501" });
+    expect(out[0]!.contact).toMatchObject({ phone_display: "050-1", phone_e164: "+972501" });
     // Not listed any more, so nothing to attach.
     expect(out[1]).not.toHaveProperty("contact");
   });

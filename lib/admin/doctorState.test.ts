@@ -29,8 +29,8 @@ describe("the three switches", () => {
 
   it("reads the switch state in words", () => {
     const approval = STATE_SWITCHES[0];
-    expect(switchState(approval, true)).toBe("مقبول");
-    expect(switchState(approval, false)).toBe("بانتظار القبول");
+    expect(switchState(approval!, true)).toBe("مقبول");
+    expect(switchState(approval!, false)).toBe("بانتظار القبول");
   });
 });
 

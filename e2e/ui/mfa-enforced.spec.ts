@@ -24,7 +24,7 @@ function totp(secret: string): string {
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000)));
   const h = createHmac("sha1", key).update(counter).digest();
-  const o = h[h.length - 1] & 0xf;
+  const o = h[h.length - 1]! & 0xf;
   return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, "0");
 }
 

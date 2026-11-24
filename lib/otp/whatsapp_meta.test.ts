@@ -29,12 +29,12 @@ describe("buildAuthTemplatePayload", () => {
 
   it("puts the code in BOTH the body and the copy-code button", () => {
     const [body, button] = payload.template.components;
-    expect(body.type).toBe("body");
-    expect(body.parameters[0]?.text).toBe("123456");
-    expect(button.type).toBe("button");
-    expect(button.sub_type).toBe("url");
-    expect(button.index).toBe("0");
-    expect(button.parameters[0]?.text).toBe("123456");
+    expect(body!.type).toBe("body");
+    expect(body!.parameters[0]?.text).toBe("123456");
+    expect(button!.type).toBe("button");
+    expect(button!.sub_type).toBe("url");
+    expect(button!.index).toBe("0");
+    expect(button!.parameters[0]?.text).toBe("123456");
   });
 
   it("preserves leading zeros in the code", () => {
@@ -83,7 +83,7 @@ describe("WhatsAppMetaOtpSender", () => {
   it("posts the template and returns Meta's message id", async () => {
     fetchMock.mockResolvedValue(Response.json({ messages: [{ id: "wamid.1" }] }));
     expect(await new WhatsAppMetaOtpSender().send("+972501234567", "123456")).toEqual({ messageRef: "wamid.1" });
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("https://graph.facebook.com/v21.0/pn1/messages");
     expect(init.headers.Authorization).toBe("Bearer tok");
     expect(JSON.parse(init.body).template.name).toBe("otp_login_ar");

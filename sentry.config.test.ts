@@ -23,7 +23,7 @@ describe.each([["server", "./sentry.server.config"], ["edge", "./sentry.edge.con
       // The same module instance the setup file just loaded.
       const scrub = await import("@/lib/sentryScrub");
       expect(init).toHaveBeenCalledOnce();
-      const opts = init.mock.calls[0][0];
+      const opts = init.mock.calls[0]![0];
       expect(opts.dataCollection).toBe(scrub.PRIVATE_DATA_COLLECTION);
       expect(opts.beforeSend).toBe(scrub.scrubEvent);
       // The browser keeps no click or console breadcrumbs at all.

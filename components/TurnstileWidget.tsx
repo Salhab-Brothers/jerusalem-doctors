@@ -156,7 +156,7 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, Props>(
         callback: (t) => handleToken.current(t),
         "expired-callback": () => handleToken.current(""),
         "error-callback": () => handleToken.current(""),
-        action,
+        ...(action ? { action } : {}),
         theme: "auto",
         // Stay invisible while passive checks run, only render the
         // challenge UI if a user interaction is actually required. Prevents

@@ -43,7 +43,7 @@ describe("admin specialties", () => {
     it("appends after the last sort_order, normalized", async () => {
       db.queue("specialties", { data: { sort_order: 7 } }, {});
       expect((await create({ name_ar: "أمراض الجلد" })).status).toBe(200);
-      expect(db.argsOf("specialties", "insert")[0][0]).toEqual({
+      expect(db.argsOf("specialties", "insert")[0]![0]).toEqual({
         name_ar: "أمراض الجلد",
         name_ar_normalized: "امراض الجلد",
         name_he: null,
@@ -57,7 +57,7 @@ describe("admin specialties", () => {
 
     it("starts at 1 on an empty table", async () => {
       await create({ name_ar: "جراحة", name_en: "Surgery" });
-      expect(db.argsOf("specialties", "insert")[0][0]).toMatchObject({ sort_order: 1, name_en: "Surgery" });
+      expect(db.argsOf("specialties", "insert")[0]![0]).toMatchObject({ sort_order: 1, name_en: "Surgery" });
     });
 
     it("500s when the insert fails", async () => {
@@ -69,7 +69,7 @@ describe("admin specialties", () => {
   describe("PATCH", () => {
     it("re-normalizes a renamed specialty", async () => {
       expect((await patch({ name_ar: "إسعاف", is_active: false })).status).toBe(200);
-      expect(db.argsOf("specialties", "update")[0][0]).toEqual({
+      expect(db.argsOf("specialties", "update")[0]![0]).toEqual({
         name_ar: "إسعاف",
         name_ar_normalized: "اسعاف",
         is_active: false,

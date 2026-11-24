@@ -33,10 +33,10 @@ export function DoctorPanel({
   title: string;
   width?: keyof typeof WIDTH;
   /** The doctors either side in the list behind the panel, to go through it without closing. */
-  prevHref?: string;
-  nextHref?: string;
+  prevHref?: string | undefined;
+  nextHref?: string | undefined;
   /** "3 of 9": where this doctor is in that list. */
-  position?: { n: number; of: number };
+  position?: { n: number; of: number } | undefined;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -53,9 +53,9 @@ export function DoctorPanel({
         const items = [...box.current.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
           (el) => !(el as HTMLButtonElement).disabled && el.offsetParent !== null,
         );
-        if (items.length === 0) return;
-        const first = items[0];
-        const last = items[items.length - 1];
+        const first = items.at(0);
+        const last = items.at(-1);
+        if (!first || !last) return;
         const here = document.activeElement;
         if (e.shiftKey && (here === first || here === box.current || !box.current.contains(here))) {
           e.preventDefault();

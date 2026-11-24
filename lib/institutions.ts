@@ -57,7 +57,7 @@ export function matchInstitution(
   // rule below.
   const exact = matchKey(name);
   const exactHits = institutions.filter((i) => keysOf(i).includes(exact));
-  if (exactHits.length === 1) return exactHits[0].id;
+  if (exactHits.length === 1) return exactHits[0]?.id ?? null;
 
   const key = ` ${exact} `;
   const matched = institutions
@@ -71,11 +71,11 @@ export function matchInstitution(
   const hits = matched
     .filter((m) => !matched.some((o) => o !== m && m.keys.every((k) => o.all.some((ok) => ok !== k && ok.includes(k)))))
     .map((m) => m.i);
-  if (hits.length === 1) return hits[0].id;
+  if (hits.length === 1) return hits[0]?.id ?? null;
   // A hospital-type workplace naming both its hospital and the fund that
   // runs it ("مسجات لداخ موحيدت") belongs to the hospital.
   const hospitals = hits.filter((i) => i.kind === "hospital");
-  return workplaceType === "hospital" && hospitals.length === 1 ? hospitals[0].id : null;
+  return workplaceType === "hospital" && hospitals.length === 1 ? (hospitals[0]?.id ?? null) : null;
 }
 
 /** Institutions whose names or spellings match a search term. */

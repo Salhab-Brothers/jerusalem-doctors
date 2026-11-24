@@ -41,10 +41,10 @@ afterEach(() => vi.restoreAllMocks());
 describe("toSearchHits detail", () => {
   it("flattens a list-shaped specialty embed, orders workplaces, and names the fund", () => {
     const [hit] = toSearchHits([ROW()]);
-    expect(hit.specialties).toEqual(["جلدية", "أطفال"]);
-    expect(hit.workplaces.map((w) => w.name)).toEqual(["أ", "ب", "ج"]);
-    expect(hit.workplaces.map((w) => w.hmo)).toEqual([null, "مكابي", "كلاليت"]);
-    expect(hit.workplaces[2]).toMatchObject({ institution_id: "i1" });
+    expect(hit!.specialties).toEqual(["جلدية", "أطفال"]);
+    expect(hit!.workplaces.map((w) => w.name)).toEqual(["أ", "ب", "ج"]);
+    expect(hit!.workplaces.map((w) => w.hmo)).toEqual([null, "مكابي", "كلاليت"]);
+    expect(hit!.workplaces[2]).toMatchObject({ institution_id: "i1" });
   });
 
   it("survives a row with no specialties, workplaces or number", () => {

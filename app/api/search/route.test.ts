@@ -136,13 +136,14 @@ describe("GET /api/search", () => {
     expect(rpc).toHaveBeenCalledWith(
       "search_directory",
       expect.objectContaining({
-        p_term: undefined,
         p_workplace_institution: SHAAREI,
         p_workplace_type: "hmo",
         p_stage: "general",
         p_seeking_work: true,
       }),
     );
+    // No text: the argument is left out, which the function reads as NULL.
+    expect((rpc.mock.lastCall as unknown as [string, object])[1]).not.toHaveProperty("p_term");
   });
 
   it("400s on a filter value it does not know", async () => {
@@ -157,7 +158,8 @@ describe("GET /api/search", () => {
 
   it("lists everyone (filtered or not) when there is no text", async () => {
     await search({ specialty_id: SPECIALTY });
-    expect(rpc).toHaveBeenCalledWith("search_directory", expect.objectContaining({ p_term: undefined, p_institution_ids: [] }));
+    expect(rpc).toHaveBeenCalledWith("search_directory", expect.objectContaining({ p_institution_ids: [] }));
+    expect((rpc.mock.lastCall as unknown as [string, object])[1]).not.toHaveProperty("p_term");
   });
 
   it("answers an all-punctuation query with nothing, without a query", async () => {

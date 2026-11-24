@@ -1,5 +1,6 @@
 // PATCH /api/admin/specialties/[id], rename, reorder, or toggle active.
 
+import { withoutUndefined } from "@/lib/withoutUndefined";
 import { z } from "zod";
 import { jsonError, jsonOk, withJsonErrors } from "@/lib/api/respond";
 import { requireAdminOrNull } from "@/lib/auth/adminApi";
@@ -35,10 +36,10 @@ export const PATCH = withJsonErrors(async (
     return jsonError(400, { error: "invalid_body", code: "invalid_body" });
   }
 
-  const updates: TablesUpdate<"specialties"> = {
+  const updates: TablesUpdate<"specialties"> = withoutUndefined({
     ...body,
     ...(body.name_ar !== undefined && { name_ar_normalized: normalizeArabic(body.name_ar) }),
-  };
+  });
   if (Object.keys(updates).length === 0) {
     return jsonError(400, { error: "no_fields", code: "no_fields" });
   }

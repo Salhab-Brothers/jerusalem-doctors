@@ -107,16 +107,16 @@ describe("POST /api/signup/verify", () => {
     });
     expect(doctorInsert().license_verified_at).toEqual(expect.any(String));
     expect(db.argsOf("pending_signups", "update")).toEqual([[{ attempts: 1 }]]);
-    expect(db.argsOf("doctor_specialties", "insert")[0][0]).toEqual([
+    expect(db.argsOf("doctor_specialties", "insert")[0]![0]).toEqual([
       { doctor_id: "d1", specialty_id: "s1" },
       { doctor_id: "d1", specialty_id: "s2" },
     ]);
-    expect(db.argsOf("doctor_workplaces", "insert")[0][0]).toEqual([
+    expect(db.argsOf("doctor_workplaces", "insert")[0]![0]).toEqual([
       expect.objectContaining({ doctor_id: "d1", name: "عيادة", address: null, hours: null, phone: null }),
     ]);
     expect(db.argsOf("pending_signups", "delete")).toHaveLength(1);
-    expect(db.argsOf("audit_logs", "insert")[0][0]).toMatchObject({ action: "signup_verified", metadata: { auto_approved: false } });
-    expect(db.argsOf("audit_logs", "insert")[1][0]).toMatchObject({ action: "alert", metadata: { alert: "doctor_waiting" } });
+    expect(db.argsOf("audit_logs", "insert")[0]![0]).toMatchObject({ action: "signup_verified", metadata: { auto_approved: false } });
+    expect(db.argsOf("audit_logs", "insert")[1]![0]).toMatchObject({ action: "alert", metadata: { alert: "doctor_waiting" } });
   });
 
   it("queues an unverified license for admin approval", async () => {

@@ -67,7 +67,7 @@ export async function checkDoctorsPage(page: Page) {
       const at = (t: string) => (el.textContent ?? "").indexOf(t);
       return [at("التحقق من الترخيص"), at("المرحلة المهنية")];
     });
-    expect(order[0]).toBeLessThan(order[1]);
+    expect(order[0]).toBeLessThan(order[1]!);
   } else {
     await expect(bottom.getByRole("button", { name: "قبول العضوية" }), "no accept bar with nobody waiting").toHaveCount(0);
   }

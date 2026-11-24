@@ -43,7 +43,7 @@ export function toRegistryRows(records: readonly MohRecord[], now = new Date()):
     if (!Number.isInteger(lic) || lic <= 0 || !r["שם פרטי"] || !r["שם משפחה"]) continue;
     byLicense.set(lic, [...(byLicense.get(lic) ?? []), r]);
   }
-  return [...byLicense].map(([lic, rows]) => {
+  return [...byLicense].flatMap(([lic, rows]) => {
     const certs = rows
       .map((r) => ({ name: r["שם התמחות"]?.trim() ?? "", on: registryDate(r["תאריך רישום התמחות"]) }))
       .filter((c) => c.name)
@@ -51,7 +51,9 @@ export function toRegistryRows(records: readonly MohRecord[], now = new Date()):
       .sort((a, b) => (a.on ?? "").localeCompare(b.on ?? ""));
     const specialties = [...new Set(certs.map((c) => c.name))];
     const first = rows[0];
-    return {
+    // A license is only in the map with at least one record.
+    if (!first) return [];
+    return [{
       license_number: lic,
       hebrew_first_name: first["שם פרטי"],
       hebrew_family_name: first["שם משפחה"],
@@ -62,7 +64,7 @@ export function toRegistryRows(records: readonly MohRecord[], now = new Date()):
       license_issued_on: registryDate(first["תאריך רישום רישיון"]),
       specialist_since: certs.find((c) => c.on)?.on ?? null,
       synced_at: now.toISOString(),
-    };
+    }];
   });
 }
 

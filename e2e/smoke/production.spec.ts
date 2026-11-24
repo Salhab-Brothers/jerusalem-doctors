@@ -112,7 +112,7 @@ test.describe("signed in as an admin", () => {
       .map((r) => r.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/))
       .filter((m): m is RegExpMatchArray => !!m)
       // Jerusalem time is UTC+2 or +3; +3 keeps the age an upper bound.
-      .map(([, d, mo, y, h, mi]) => Date.UTC(+y, +mo - 1, +d, +h - 3, +mi));
+      .map(([, d, mo, y, h, mi]) => Date.UTC(+y!, +mo! - 1, +d!, +h! - 3, +mi!));
     expect(synced.length, "no successful registry sync on the log's first page").toBeGreaterThan(0);
     const hours = (Date.now() - Math.max(...synced)) / 3_600_000;
     expect(hours, `last successful registry sync was ${hours.toFixed(0)} hours ago`).toBeLessThan(36);

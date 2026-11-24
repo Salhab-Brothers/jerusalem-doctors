@@ -78,7 +78,7 @@ describe("getMissingFields", () => {
     expect(keys({ ...COMPLETE, workplaces: [{ ...WP, name: "   " }] })).toContain("workplace_0_name");
     const bad = getMissingFields({ ...COMPLETE, workplaces: [{ ...named, name: "  عيادة  ", workplace_type: "clinic" as const, phone: "abc" }] });
     expect(bad.map((m) => m.key)).toEqual(["workplace_0_phone"]);
-    expect(bad[0].label).toContain("(عيادة)");
+    expect(bad[0]!.label).toContain("(عيادة)");
   });
 
   it("is empty for a complete form", () => {

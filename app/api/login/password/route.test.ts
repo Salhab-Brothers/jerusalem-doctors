@@ -156,7 +156,7 @@ describe("the record", () => {
       actor_doctor_id: "d1",
       metadata: { email: "dev@example.com", is_admin: true },
     });
-    expect(audits[0].metadata).not.toHaveProperty("ci_run");
+    expect(audits[0]!.metadata).not.toHaveProperty("ci_run");
   });
 
   it("names the CI run when the production smoke test signs in", async () => {

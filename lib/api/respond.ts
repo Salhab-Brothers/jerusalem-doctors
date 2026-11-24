@@ -7,10 +7,10 @@ import "@/lib/zodArabic";
 
 export interface ApiErrorBody {
   error: string;
-  code?: string;
-  fields?: Record<string, string>;
+  code?: string | undefined;
+  fields?: Record<string, string> | undefined;
   /** Why a reason is wanted, when the client words the question by it. */
-  reason_kind?: "corrected_number" | "identity";
+  reason_kind?: "corrected_number" | "identity" | undefined;
 }
 
 export function jsonOk<T>(data: T, init?: ResponseInit): NextResponse {

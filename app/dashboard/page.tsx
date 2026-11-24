@@ -183,9 +183,10 @@ export default async function DashboardPage({
           listed={counts.listed}
           domainCounts={counts.byDomain}
           recent={sections.recent}
-          institutions={allInstitutions
-            .filter((i) => counts.byInstitution[i.id])
-            .map((i) => ({ id: i.id, name_ar: i.name_ar, kind: i.kind, count: counts.byInstitution[i.id] }))}
+          institutions={allInstitutions.flatMap((i) => {
+            const count = counts.byInstitution[i.id];
+            return count ? [{ id: i.id, name_ar: i.name_ar, kind: i.kind, count }] : [];
+          })}
         />
       </ViewerProvider>
     </main>

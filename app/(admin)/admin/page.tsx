@@ -76,7 +76,7 @@ const REAL_DOCTOR = "is_admin.eq.false,is_visible.eq.true";
 async function counts(service: SupabaseClient): Promise<Record<DoctorFilter, number>> {
   const rows = () => service.from("doctors").select("id", { count: "exact", head: true });
   const results = await Promise.all(DOCTOR_FILTERS.map((f) => applyFilter(rows(), f.key)));
-  return Object.fromEntries(DOCTOR_FILTERS.map((f, i) => [f.key, results[i].count ?? 0])) as Record<DoctorFilter, number>;
+  return Object.fromEntries(DOCTOR_FILTERS.map((f, i) => [f.key, results[i]?.count ?? 0])) as Record<DoctorFilter, number>;
 }
 
 /** Admins who are not doctors (hidden on purpose): in "all", but not in
@@ -217,8 +217,9 @@ export default async function AdminDoctorsPage({
     at === 0 && params.page > 1 ? edgeId(from - 1) : undefined,
   ]);
   const stepTo = (id: string | undefined, page = params.page) => (id ? adminDoctorsHref({ ...params, page }, { doctorId: id }) : undefined);
-  const prevHref = at > 0 ? stepTo(rows[at - 1].id) : stepTo(beforeId, params.page - 1);
-  const nextHref = at >= 0 ? (rows[at + 1] ? stepTo(rows[at + 1].id) : stepTo(afterId, params.page + 1)) : stepTo(rows[0]?.id);
+  const prevHref = at > 0 ? stepTo(rows[at - 1]?.id) : stepTo(beforeId, params.page - 1);
+  const nextRow = rows[at + 1];
+  const nextHref = at >= 0 ? (nextRow ? stepTo(nextRow.id) : stepTo(afterId, params.page + 1)) : stepTo(rows[0]?.id);
   // Where they are in the list, when they are in it.
   const position = at >= 0 ? { n: from + at + 1, of: total } : undefined;
 

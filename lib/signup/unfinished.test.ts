@@ -16,9 +16,9 @@ describe("toFormState", () => {
       workplaces: [{ name: "المقاصد", workplace_type: "hospital", details: "", address: "", hours: "", phone: "", is_primary: true }],
     });
     expect(form).toMatchObject({ phone: "0521234567", arabic_first_name: "سارة", stage: "specialist", specialty_ids: ["a", "b"], seeking_work: true, consent: false, pledge: false });
-    expect(form.workplaces[0].name).toBe("المقاصد");
+    expect(form.workplaces[0]!.name).toBe("المقاصد");
     // Saved before clinics had a fund.
-    expect(form.workplaces[0].hmo).toBe("");
+    expect(form.workplaces[0]!.hmo).toBe("");
   });
 
   it("falls back to the empty form for anything of the wrong shape", () => {
@@ -117,6 +117,6 @@ describe("toFormState with odd workplaces", () => {
     const wp = { name: "ج", workplace_type: "hospital", details: "", address: "", hours: "", phone: "", is_primary: true };
     const form = toFormState({ workplaces: [null, "x", { ...wp, workplace_type: "moon" }, { ...wp, hmo: "كلاليت" }] });
     expect(form.workplaces).toHaveLength(1);
-    expect(form.workplaces[0].hmo).toBe("كلاليت");
+    expect(form.workplaces[0]!.hmo).toBe("كلاليت");
   });
 });

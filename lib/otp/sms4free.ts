@@ -93,7 +93,7 @@ export function buildSendPayload(
  */
 export function parseSendResponse(
   raw: string,
-): { status: number; message?: string } | null {
+): { status: number; message?: string | undefined } | null {
   const trimmed = raw.trim();
   // Stryker disable next-line ConditionalExpression: parseInteger refuses an empty body too, and JSON.parse('') throws into the null below
   if (!trimmed) return null;

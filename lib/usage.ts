@@ -49,7 +49,7 @@ export type InstallKind = (typeof INSTALL_KINDS)[number];
 export async function recordEvent(
   service: SupabaseClient,
   kind: UsageKind,
-  details: { doctorId?: string; meta?: Record<string, string | number | boolean> } = {},
+  details: { doctorId?: string | undefined; meta?: Record<string, string | number | boolean> } = {},
 ): Promise<void> {
   try {
     const { error } = await service.from("usage_events").insert({

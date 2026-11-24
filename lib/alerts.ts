@@ -6,6 +6,7 @@
 // as it was, so existing Sentry alert rules still match), the Arabic an
 // admin reads, and what the admin should do about it.
 
+import { withoutUndefined } from "@/lib/withoutUndefined";
 import * as Sentry from "@sentry/nextjs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { after } from "next/server";
@@ -159,7 +160,7 @@ export async function raiseAlert(
 ): Promise<void> {
   const { sentry, level: defaultLevel } = ALERTS[code];
   const level = details.level ?? defaultLevel;
-  Sentry.captureMessage(sentry, { level, extra: details.extra, tags: details.tags });
+  Sentry.captureMessage(sentry, withoutUndefined({ level, extra: details.extra, tags: details.tags }));
   await writeAudit(service, { action: "alert", metadata: { alert: code, level, ...details.extra, ...details.logOnly } });
 
   const url = PUSH_TO[code];
