@@ -58,6 +58,13 @@ describe("the window", () => {
     expect(await enrolWindowOpen(fake({ meta: { mfa_enrol_until: true } }).client, "u1", 0)).toBe(false);
   });
 
+  it("is open for fifteen minutes, and closed for an account with no metadata at all", async () => {
+    expect(ENROL_WINDOW_MS).toBe(15 * 60 * 1000);
+    const bare = fake();
+    bare.admin.getUserById.mockResolvedValueOnce({ data: { user: {} } } as never);
+    expect(await enrolWindowOpen(bare.client, "u1", 1000)).toBe(false);
+  });
+
   it("reads as closed, and says so, when the account cannot be read or cleared", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const bad = fake();

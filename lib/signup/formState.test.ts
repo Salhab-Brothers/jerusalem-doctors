@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { STAGE_BY_KEY } from "@/lib/careerStage";
 import { emptyWorkplace } from "@/lib/workplace";
 import {
   applyStage,
@@ -63,6 +64,59 @@ describe("applyStage", () => {
   });
 });
 
+describe("INITIAL", () => {
+  it("is a blank form: nothing ticked, no stage, one untouched clinic row", () => {
+    expect(INITIAL).toEqual({
+      phone: "",
+      license_region: "IL",
+      license_number: "",
+      has_secondary_license: false,
+      secondary_license_region: "PS",
+      secondary_license_number: "",
+      arabic_first_name: "",
+      arabic_family_name: "",
+      hebrew_first_name: "",
+      hebrew_family_name: "",
+      stage: null,
+      residency_start_year: "",
+      specialty_ids: [],
+      subspecialty: "",
+      email: "",
+      bio: "",
+      certificates: [],
+      seeking_work: false,
+      retired: false,
+      workplaces: [emptyWorkplace(true)],
+      consent: false,
+      pledge: false,
+    });
+  });
+});
+
+describe("applyStage and the workplace rows", () => {
+  const row = (name: string, workplace_type: "hospital" | "clinic" | "hmo") => ({ ...emptyWorkplace(true), name, workplace_type });
+  const form = (w: ReturnType<typeof row>): FormState => ({ ...INITIAL, workplaces: [w] });
+
+  it("treats a name of only spaces as untouched, so the row adopts the stage's default type", () => {
+    expect(STAGE_BY_KEY.general.defaultWorkplaceType).toBe("clinic");
+    expect(applyStage(form(row("   ", "hospital")), "general", null).workplaces[0].workplace_type).toBe("clinic");
+  });
+
+  it("leaves a row the doctor has named alone when the new stage offers its type", () => {
+    expect(STAGE_BY_KEY.specialist.workplaceTypes).toContain("clinic");
+    expect(STAGE_BY_KEY.specialist.defaultWorkplaceType).toBe("hospital");
+    expect(applyStage(form(row("عيادة د. سلهب", "clinic")), "specialist", null).workplaces[0].workplace_type).toBe("clinic");
+  });
+});
+
+describe("cleanLicense edge cases", () => {
+  it("keeps an IL license with no hyphen as it is, and one with several to the first", () => {
+    expect(cleanLicense("IL", "123456")).toBe("123456");
+    expect(cleanLicense("IL", "12-34-56")).toBe("12-3456");
+    expect(cleanLicense("IL", "-5-6")).toBe("-56");
+  });
+});
+
 describe("buildStartBody", () => {
   it("maps the UI stage and drops a secondary license that was unticked", () => {
     const body = buildStartBody(
@@ -85,6 +139,11 @@ describe("buildStartBody", () => {
       turnstile_token: "tok",
       workplaces: [],
     });
+  });
+
+  it("keeps the form for a reminder's link, but never the consent and pledge", () => {
+    const body = buildStartBody({ ...INITIAL, phone: "0501234567", consent: true, pledge: true }, false, "t");
+    expect(body.resume_form).toEqual({ ...INITIAL, phone: "0501234567", consent: false, pledge: false });
   });
 
   it("sends a trimmed secondary license when ticked, and null stage as null", () => {

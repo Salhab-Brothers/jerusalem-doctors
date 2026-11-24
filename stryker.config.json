@@ -13,11 +13,10 @@
     "!**/*.test.ts"
   ],
   "mutator": { "excludedMutations": ["StringLiteral"] },
-  "ignoreStatic": true,
-  "incremental": true,
-  "reporters": ["clear-text", "html"],
+    "incremental": true,
+  "reporters": ["clear-text", "html", "json"],
   "clearTextReporter": { "reportScoreTable": true, "skipFull": true, "maxTestsToLog": 0, "allowColors": false },
-  "thresholds": { "high": 85, "low": 78, "break": 75 },
+  "thresholds": { "high": 98, "low": 96, "break": 95 },
   "ignorePatterns": [".next", ".worktrees", "coverage", ".env*", ".local-secrets", ".claude"],
   "tempDirName": ".stryker-tmp",
   "timeoutMS": 10000

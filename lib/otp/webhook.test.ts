@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { parseHookSecret, signSendSmsHook, verifySendSmsHook } from "./webhook";
 
@@ -113,5 +114,42 @@ describe("verifySendSmsHook", () => {
 describe("a secret with no key bytes", () => {
   it("verifies nothing", () => {
     expect(verifySendSmsHook(BODY, headers(), "v1,whsec_", NOW_MS)).toBe(false);
+  });
+});
+
+describe("verifySendSmsHook: the edges", () => {
+  const verify = (h: Headers, now = NOW_MS, secret = SECRET) => verifySendSmsHook(BODY, h, secret, now);
+  const signed = (id: string, ts: string, key: Buffer = parseHookSecret(SECRET)) =>
+    `v1,${createHmac("sha256", key).update(`${id}.${ts}.${BODY}`).digest("base64")}`;
+
+  it("accepts a timestamp up to five minutes old or ahead, to the second, and no more", () => {
+    for (const offset of [-300, 300, 0]) {
+      const ts = TS + offset;
+      expect(verify(headers({ "webhook-timestamp": String(ts), "webhook-signature": signSendSmsHook(BODY, ID, ts, SECRET) })), `${offset}`).toBe(true);
+    }
+    for (const offset of [-301, 301]) {
+      const ts = TS + offset;
+      expect(verify(headers({ "webhook-timestamp": String(ts), "webhook-signature": signSendSmsHook(BODY, ID, ts, SECRET) })), `${offset}`).toBe(false);
+    }
+  });
+
+  it("refuses a request without an id even when its signature is valid for the text 'null'", () => {
+    const h = headers({ "webhook-id": null, "webhook-signature": signed("null", String(TS)) });
+    expect(verify(h)).toBe(false);
+  });
+
+  it("refuses a timestamp that is not a number, even when it is signed", () => {
+    const h = headers({ "webhook-timestamp": "soon", "webhook-signature": signed(ID, "soon") });
+    expect(verify(h)).toBe(false);
+  });
+
+  it("refuses a secret that decodes to no key at all, even when the request is signed with that empty key", () => {
+    const h = headers({ "webhook-signature": signed(ID, String(TS), Buffer.alloc(0)) });
+    expect(verify(h, NOW_MS, "v1,whsec_")).toBe(false);
+  });
+
+  it("reads a secret with spaces or a newline around it", () => {
+    expect(verify(headers(), NOW_MS, `  ${SECRET}\n`)).toBe(true);
+    expect(parseHookSecret(`  ${SECRET}\n`)).toEqual(parseHookSecret(SECRET));
   });
 });

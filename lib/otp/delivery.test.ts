@@ -10,6 +10,18 @@ describe("delivery reports", () => {
     expect(deliveryKey("s")).not.toContain("s".repeat(2));
   });
 
+  it("reads the send time from our own message id only, whole, and never from the future", () => {
+    const now = 1_800_000_000_000;
+    expect(deliveryDelaySeconds(`${now}-deadbeef`, now)).toBe(0);
+    expect(deliveryDelaySeconds(`${now - 5_000}-deadbeef`, now)).toBe(5);
+    for (const bad of [
+      `x${now - 5_000}-deadbeef`, `${now - 5_000}-deadbeef0`, `${now - 5_000}-deadbee`, `${now - 5_000}-DEADBEEF`,
+      `${now + 1}-deadbeef`, "0000000000000-deadbeef", `${now - 5_000}-deadbeef\n`,
+    ]) {
+      expect(deliveryDelaySeconds(bad, now), bad).toBeNull();
+    }
+  });
+
   it("asks for reports in production, or where a base is given, never without the secret", () => {
     const secret = { SEND_SMS_HOOK_SECRET: "s" };
     expect(deliveryUrl({ ...secret, VERCEL_ENV: "production", VERCEL_PROJECT_PRODUCTION_URL: "jd.example" })).toBe(

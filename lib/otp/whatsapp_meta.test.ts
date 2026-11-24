@@ -8,6 +8,11 @@ describe("buildAuthTemplatePayload", () => {
     expect(payload.to).toBe("972501234567");
   });
 
+  it("strips only the leading +", () => {
+    expect(buildAuthTemplatePayload("+97+25", "1", "t").to).toBe("97+25");
+    expect(buildAuthTemplatePayload("97+25", "1", "t").to).toBe("97+25");
+  });
+
   it("leaves an already-plainless number alone", () => {
     expect(buildAuthTemplatePayload("972501234567", "1", "t").to).toBe("972501234567");
   });
@@ -58,9 +63,21 @@ describe("WhatsAppMetaOtpSender", () => {
     vi.unstubAllGlobals();
   });
 
-  it("refuses to start without its env", () => {
+  it("refuses to start without its env, as a permanent configuration error", () => {
     vi.stubEnv("META_ACCESS_TOKEN", "");
-    expect(() => new WhatsAppMetaOtpSender()).toThrow(/missing env/);
+    expect(() => new WhatsAppMetaOtpSender()).toThrow(expect.objectContaining({ permanent: true, message: expect.stringContaining("missing env") }));
+  });
+
+  it("is permanent for 400 to 499 and transient outside it, whatever the body", async () => {
+    for (const [status, permanent] of [[400, true], [404, true], [499, true], [399, false], [500, false], [503, false]] as const) {
+      fetchMock.mockResolvedValue(new Response("x", { status }));
+      await expect(new WhatsAppMetaOtpSender().send("+972501234567", "1"), String(status)).rejects.toMatchObject({ permanent });
+    }
+  });
+
+  it("returns an empty ref when Meta answers with no messages at all", async () => {
+    fetchMock.mockResolvedValue(Response.json({ messages: [] }));
+    expect(await new WhatsAppMetaOtpSender().send("+972501234567", "1")).toEqual({ messageRef: "" });
   });
 
   it("posts the template and returns Meta's message id", async () => {

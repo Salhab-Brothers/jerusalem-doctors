@@ -13,6 +13,8 @@ describe("numberPrefix", () => {
   it("keeps nothing of a number outside the two regions", () => {
     expect(numberPrefix("+15551234567")).toBe("other");
     expect(numberPrefix("")).toBe("other");
+    expect(numberPrefix("x+972521234567")).toBe("other");
+    expect(numberPrefix("972521234567")).toBe("other");
   });
 
   it("never returns more than the range", () => {

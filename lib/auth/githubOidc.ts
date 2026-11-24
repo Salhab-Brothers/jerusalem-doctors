@@ -88,6 +88,7 @@ export async function verifySmokeToken(
 ): Promise<CiClaims | null> {
   try {
     const [h, p, s] = token.split(".");
+    // Stryker disable next-line ConditionalExpression,LogicalOperator: a token with a missing part fails to parse below and is refused by the catch
     if (!h || !p || !s) return null;
     const header = json(h);
     if (header.alg !== "RS256" || typeof header.kid !== "string") return null;
@@ -104,6 +105,7 @@ export async function verifySmokeToken(
       typeof c.exp === "number" && c.exp > now &&
       fresh &&
       c.repository === REPOSITORY &&
+      // Stryker disable next-line ConditionalExpression: a workflow_ref that is not a string throws at startsWith and is refused by the catch
       typeof c.workflow_ref === "string" && c.workflow_ref.startsWith(SMOKE_WORKFLOW) &&
       EVENTS.has(c.event_name) &&
       c.runner_environment === "github-hosted" &&

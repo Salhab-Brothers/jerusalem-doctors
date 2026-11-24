@@ -66,10 +66,49 @@ describe("readResumeForm and purgeUnfinished", () => {
     await expect(readResumeForm(client({ error: { message: "boom" } }), TOKEN)).rejects.toThrow("pending_signups read failed: boom");
   });
 
+  it("accepts a link of 20 to 64 URL-safe characters and nothing else, whole", async () => {
+    const saved = client({ data: { payload: { resume_form: { phone: "0521234567" } } } });
+    for (const ok of ["a".repeat(20), "a".repeat(64), "Ab-_9".repeat(6)]) expect(await readResumeForm(saved, ok), ok).not.toBeNull();
+    for (const bad of ["a".repeat(19), "a".repeat(65), `!${"a".repeat(32)}`, `${"a".repeat(32)}!`, `${"a".repeat(32)}\n`, `${"a".repeat(31)} a`]) {
+      expect(await readResumeForm(saved, bad), JSON.stringify(bad)).toBeNull();
+    }
+  });
+
+  it("asks the database for the count, which is how it knows how many it deleted", async () => {
+    const asked: unknown[][] = [];
+    const c: Record<string, unknown> = { then: (ok: (v: unknown) => unknown) => Promise.resolve({ error: null, count: 2 }).then(ok) };
+    c.delete = (...args: unknown[]) => (asked.push(args), c);
+    c.lt = () => c;
+    expect(await purgeUnfinished({ from: () => c } as never)).toBe(2);
+    expect(asked).toEqual([[{ count: "exact" }]]);
+  });
+
   it("counts what the purge deleted, and throws on a failure", async () => {
     expect(await purgeUnfinished(client({ count: 4 }))).toBe(4);
     expect(await purgeUnfinished(client({ count: null }))).toBe(0);
     await expect(purgeUnfinished(client({ error: { message: "boom" } }))).rejects.toThrow("purge failed");
+  });
+});
+
+describe("toFormState only takes what has the right type", () => {
+  it("takes a list of strings only when every item is one, and never reads workplaces as such a list", () => {
+    expect(toFormState({ specialty_ids: ["a", 1] }).specialty_ids).toEqual([]);
+    expect(toFormState({ specialty_ids: ["a", "b"] }).specialty_ids).toEqual(["a", "b"]);
+    expect(toFormState({ workplaces: ["a", "b"] }).workplaces).toEqual(INITIAL.workplaces);
+  });
+
+  const wp = { name: "ج", workplace_type: "hospital", details: "d", address: "a", hours: "h", phone: "p", is_primary: true };
+
+  it("drops a workplace missing any field, or with one of the wrong type", () => {
+    for (const k of ["name", "details", "address", "hours", "phone"] as const) {
+      expect(toFormState({ workplaces: [{ ...wp, [k]: 5 }] }).workplaces, `${k} wrong type`).toEqual(INITIAL.workplaces);
+      const without: Partial<typeof wp> = { ...wp };
+      delete without[k];
+      expect(toFormState({ workplaces: [without] }).workplaces, `${k} missing`).toEqual(INITIAL.workplaces);
+    }
+    expect(toFormState({ workplaces: [{ ...wp, is_primary: "yes" }] }).workplaces).toEqual(INITIAL.workplaces);
+    expect(toFormState({ workplaces: [{ workplace_type: "clinic", is_primary: true }] }).workplaces).toEqual(INITIAL.workplaces);
+    expect(toFormState({ workplaces: [wp] }).workplaces).toEqual([{ ...wp, hmo: "" }]);
   });
 });
 

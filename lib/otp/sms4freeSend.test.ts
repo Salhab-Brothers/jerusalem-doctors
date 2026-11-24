@@ -34,6 +34,17 @@ describe("Sms4FreeOtpSender setup", () => {
     vi.stubEnv("SMS4FREE_SENDER", "أطباء");
     expect(() => new Sms4FreeOtpSender()).toThrow(/SMS4FREE_SENDER/);
   });
+
+  it("accepts 1 to 11 letters or digits, whole, and refuses anything around or inside them", () => {
+    for (const ok of ["J", "JDoctors", "ABCDEFGHIJK", "a1B2c3D4e5f".slice(0, 11), "0123456789"]) {
+      vi.stubEnv("SMS4FREE_SENDER", ok);
+      expect(() => new Sms4FreeOtpSender(), ok).not.toThrow();
+    }
+    for (const bad of ["ABCDEFGHIJKL", "-JDoctors", "JDoctors-", "J Doctors", "JDoctors\n", "J_D", "J.D"]) {
+      vi.stubEnv("SMS4FREE_SENDER", bad);
+      expect(() => new Sms4FreeOtpSender(), JSON.stringify(bad)).toThrow(expect.objectContaining({ permanent: true, reason: "provider_config" }));
+    }
+  });
 });
 
 describe("Sms4FreeOtpSender.send", () => {

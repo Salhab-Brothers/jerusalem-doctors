@@ -91,6 +91,7 @@ export function buildSendPayload(
  * deliberately not treated as a failed send.
  */
 function bareInteger(trimmed: string): number | null {
+  // Stryker disable next-line ConditionalExpression: parseSendResponse refuses an empty body before calling this
   if (!trimmed) return null;
   const n = Number(trimmed);
   return Number.isInteger(n) ? n : null;
@@ -100,6 +101,7 @@ export function parseSendResponse(
   raw: string,
 ): { status: number; message?: string } | null {
   const trimmed = raw.trim();
+  // Stryker disable next-line ConditionalExpression: bareInteger refuses it too, and JSON.parse('') throws into the null below
   if (!trimmed) return null;
 
   const bare = bareInteger(trimmed);

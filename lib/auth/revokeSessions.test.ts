@@ -30,6 +30,7 @@ describe("revokeSessions", () => {
   it("reports a failure instead of throwing, so the admin's change still stands", async () => {
     rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
     expect(await revokeSessions(service, "auth-1", "suspend")).toBe(false);
+    expect(console.error).toHaveBeenCalledWith("[revokeSessions] suspend failed", { message: "boom" });
     expect(captureException).toHaveBeenCalledWith({ message: "boom" }, { extra: { action: "revoke_sessions.suspend" } });
   });
 });

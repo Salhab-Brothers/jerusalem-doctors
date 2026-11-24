@@ -157,6 +157,21 @@ describe("lib/auth/session", () => {
       expect(auth.getClaims).toHaveBeenCalled();
     });
 
+    it.each([
+      ["in production, with the shim unset", "production", ""],
+      ["in production, with the shim off", "production", "0"],
+      ["outside production, with the shim on", "test", "1"],
+      ["in development, with the shim on", "development", "1"],
+    ])("says nothing at load %s", async (_, nodeEnv, flag) => {
+      vi.stubEnv("NODE_ENV", nodeEnv);
+      vi.stubEnv("USE_DEV_USER", flag);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.resetModules();
+      await session();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
     it("is ignored in production, with a warning at load", async () => {
       vi.stubEnv("NODE_ENV", "production");
       const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
