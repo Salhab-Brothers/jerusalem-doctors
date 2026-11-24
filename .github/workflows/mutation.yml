@@ -1,0 +1,63 @@
+# Mutation testing (stryker.config.json): Stryker makes small changes to the
+# security-critical code (sign-in, codes, rate limits, the proxy) and runs the
+# unit tests against each; a change no test notices is a behaviour the tests do
+# not pin down. Weekly and on demand, never a required check on a pull request.
+# The job fails only when the score falls below thresholds.break.
+name: Mutation testing
+
+on:
+  schedule:
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+  # Only a change to the setup itself runs it on a pull request, to prove the
+  # setup still works; it is not a required check.
+  pull_request:
+    paths:
+      - .github/workflows/mutation.yml
+      - stryker.config.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation
+  cancel-in-progress: false
+
+jobs:
+  mutation:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Incremental mode: Stryker reuses the last run's result for every mutant
+      # whose code and tests are unchanged, so after the first run a week's
+      # changes take minutes instead of the full run. Each run saves under its
+      # own key; the newest saved one is restored.
+      - name: Restore the last run's results
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: mutation-incremental-${{ github.run_id }}
+          restore-keys: mutation-incremental-
+      - run: npx stryker run
+      - name: Save this run's results
+        if: ${{ !cancelled() && hashFiles('reports/stryker-incremental.json') != '' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: mutation-incremental-${{ github.run_id }}
+      - name: Keep the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-report
+          path: reports/mutation/mutation.html
+          retention-days: 30
+          if-no-files-found: ignore

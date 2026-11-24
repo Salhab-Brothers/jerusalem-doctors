@@ -13,6 +13,9 @@
 # testing
 /coverage
 /.vitest
+# mutation testing (stryker.config.json): the sandbox copy and the reports
+/.stryker-tmp
+/reports
 
 # next.js
 /.next/

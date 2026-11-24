@@ -144,6 +144,13 @@ describe("lib/auth/session", () => {
       await expect((await session()).getCurrentDoctor()).rejects.toEqual({ message: "boom" });
     });
 
+    it.each(["", "0", "true", "yes"])("stays off unless USE_DEV_USER is exactly 1 (not %j), whatever DEV_DOCTOR_ID says", async (value) => {
+      vi.stubEnv("USE_DEV_USER", value);
+      expect(await (await session()).getCurrentDoctor()).toBeNull();
+      expect(auth.getClaims).toHaveBeenCalled();
+      expect(db.argsOf("doctors", "eq")).toEqual([]);
+    });
+
     it("stays off without DEV_DOCTOR_ID", async () => {
       vi.stubEnv("DEV_DOCTOR_ID", "");
       expect(await (await session()).getCurrentDoctor()).toBeNull();

@@ -64,6 +64,8 @@ const eslintConfig = defineConfig([
     ".worktrees/**",
     ".claude/worktrees/**",
     "coverage/**",
+    // A mutation run's sandbox copy of the code, left behind if the run is interrupted.
+    ".stryker-tmp/**",
   ]),
 ]);
 

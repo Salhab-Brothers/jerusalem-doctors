@@ -67,6 +67,65 @@ describe("verifySmokeToken", () => {
     expect(await check(token(CLAIMS, github.privateKey, { alg: "none", kid: "k1" }))).toBeNull();
   });
 
+  it("is pinned to this repository, issuer and audience by value, not by the constants the tests share with it", async () => {
+    // The tests above build their tokens from the exported constants, so a changed
+    // constant would change both sides and stay green. These are the real values.
+    expect(GITHUB_ISSUER).toBe("https://token.actions.githubusercontent.com");
+    expect(CI_AUDIENCE).toBe("jerusalem-doctors-smoke");
+    expect(REPOSITORY).toBe("Salhab-Brothers/jerusalem-doctors");
+    const literal = {
+      iss: "https://token.actions.githubusercontent.com",
+      aud: "jerusalem-doctors-smoke",
+      repository: "Salhab-Brothers/jerusalem-doctors",
+      workflow_ref: "Salhab-Brothers/jerusalem-doctors/.github/workflows/smoke.yml@refs/heads/main",
+    };
+    expect(await check(token({ ...CLAIMS, ...literal }))).not.toBeNull();
+    expect(await check(token({ ...CLAIMS, ...literal, repository: "Salhab-Brothers/other" }))).toBeNull();
+    expect(await check(token({ ...CLAIMS, ...literal, workflow_ref: "Salhab-Brothers/other/.github/workflows/smoke.yml@refs/heads/main" }))).toBeNull();
+  });
+
+  it.each(["push", "deployment_status", "schedule", "workflow_dispatch"])(
+    "accepts the smoke workflow's own trigger %s, on main",
+    async (event) => {
+      expect(await check(token({ ...CLAIMS, ...at("refs/heads/main", event) }))).not.toBeNull();
+    },
+  );
+
+  it("refuses the triggers the smoke workflow does not have, even on main", async () => {
+    for (const event of ["pull_request", "pull_request_target", "workflow_run", "issue_comment", ""]) {
+      expect(await check(token({ ...CLAIMS, ...at("refs/heads/main", event) }))).toBeNull();
+    }
+  });
+
+  it("accepts a token up to ten minutes old and one minute ahead of our clock, and no more", async () => {
+    expect(await check(token({ ...CLAIMS, iat: NOW - 600, exp: NOW + 60 }))).not.toBeNull();
+    expect(await check(token({ ...CLAIMS, iat: NOW - 601, exp: NOW + 60 }))).toBeNull();
+    expect(await check(token({ ...CLAIMS, iat: NOW + 60 }))).not.toBeNull();
+    expect(await check(token({ ...CLAIMS, iat: NOW + 61 }))).toBeNull();
+    expect(await check(token({ ...CLAIMS, iat: "recent" }))).toBeNull();
+  });
+
+  it("takes times only as numbers: a numeric string is not a time", async () => {
+    expect(await check(token({ ...CLAIMS, iat: String(NOW - 30) }))).toBeNull();
+    expect(await check(token({ ...CLAIMS, exp: String(NOW + 270) }))).toBeNull();
+    expect(await check(token({ ...CLAIMS, jti: ["a7c1"] }))).toBeNull();
+  });
+
+  it("checks the commit's shape itself, whatever the branch lookup would say", async () => {
+    const yes = async () => true;
+    const run = (ref: string) => verifySmokeToken(token({ ...CLAIMS, ...at(ref) }), keyOf, NOW, yes);
+    expect(await run(SHA)).not.toBeNull();
+    for (const ref of [`${SHA}ff`, `ff${SHA}`, `${SHA}\n`, SHA.slice(0, 39), SHA.toUpperCase()]) {
+      expect(await run(ref)).toBeNull();
+    }
+  });
+
+  it("refuses a token that expires this second, and one with no expiry", async () => {
+    expect(await check(token({ ...CLAIMS, exp: NOW }))).toBeNull();
+    expect(await check(token({ ...CLAIMS, exp: NOW + 1 }))).not.toBeNull();
+    expect(await check(token({ ...CLAIMS, exp: undefined }))).toBeNull();
+  });
+
   it("refuses a tampered token", async () => {
     const [h, , s] = token(CLAIMS).split(".");
     expect(await check(`${h}.${b64({ ...CLAIMS, repository: "someone/else" })}.${s}`)).toBeNull();

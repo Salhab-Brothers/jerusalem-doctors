@@ -925,6 +925,18 @@ Setting it up, once per Supabase project:
 The smoke check records no traces, screenshots or videos: they would record
 the session and admin pages, and the repository is public.
 
+## Mutation testing (weekly, advisory)
+
+`.github/workflows/mutation.yml` runs Stryker (`stryker.config.json`) every Sunday and on demand (Actions, "Mutation testing", Run workflow). It makes small changes to the sign-in, code, rate-limit and proxy code (`lib/auth`, `lib/otp`, `lib/security`, `lib/api`, `lib/signup`, `proxy.ts`) and runs the unit tests against each. A change no test notices is a behaviour the tests do not pin down.
+
+- **Never a required check.** It fails only if the score falls below `thresholds.break` (75, from a measured 79 on 19 Nov 2026): a regression, not a to-do list. Chasing every surviving mutant is not the goal: many cannot be killed (the change does not alter behaviour).
+- **Read it:** the run's `mutation-report` artifact (an HTML page, 30 days) lists each surviving mutant with its code. A survivor in the sign-in or code path is worth a test; one in a log line or a cache is not.
+- **First run** is the full set (about 10 to 15 minutes); later runs reuse the last result for unchanged code and tests (the incremental file, kept in the Actions cache), so they take a few minutes.
+- **Locally:** `npm run test:mutation`. It writes the report to `reports/mutation/mutation.html`; the sandbox (`.stryker-tmp`) and reports are git-ignored. `--mutate lib/auth/session.ts` limits it to one file.
+- **Updating:** `@stryker-mutator/core`, `vitest-runner` and `typescript-checker` must be the same version (a peer dependency), so Dependabot bumps them as one group. Stryker needs Node 22 or later.
+- **Known false survivors:** a change to a constant computed when a module loads (for example `MAX_AGE_SECONDS` in `lib/auth/githubOidc.ts`) can survive even though a test would catch it. Do not write a test for it.
+- **Not covered yet:** the route handlers under `app/api` (about 57% on a trial run, mostly response shapes). Add them to `mutate` only if a full run's time (about 35 minutes locally) is acceptable.
+
 ## Common one-liners
 
 ### Promote yourself to admin
