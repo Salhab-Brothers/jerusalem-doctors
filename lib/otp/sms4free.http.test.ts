@@ -132,6 +132,15 @@ describe("fetchAvailableSms", () => {
     reply = { body: "<html>oops</html>", status: 200 };
     await expect(fetchAvailableSms()).rejects.toThrow(/unparseable/);
   });
+
+  it("shows the start of an unreadable reply in the error, a send's and a balance check's, with numbers masked", async () => {
+    reply = { body: "4.0 sent to 0501234567", status: 200 };
+    const forSend = await send().then(() => null, (e: Error) => e);
+    expect(forSend?.message).toBe('SMS4FREE send failed: unparseable response body "4.0 sent to #"');
+    const forBalance = await fetchAvailableSms().then(() => null, (e: Error) => e);
+    expect(forBalance?.message).toBe('SMS4FREE balance check failed: unparseable response body "4.0 sent to #"');
+    expect(forSend?.message).not.toContain("0501234567");
+  });
 });
 
 describe("the provider's answers, edge by edge", () => {

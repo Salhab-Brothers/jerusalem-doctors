@@ -186,3 +186,105 @@ describe("E164", () => {
     }
   });
 });
+
+describe("normalizePhone: what is not a phone at all", () => {
+  const message = (input: unknown) => {
+    try {
+      normalizePhone(input as string);
+    } catch (e) {
+      expect(e).toBeInstanceOf(InvalidPhoneError);
+      return (e as Error).message;
+    }
+    return "did not throw";
+  };
+
+  it("says 'empty input' for nothing and for what is not text, never a TypeError", () => {
+    for (const input of ["", null, undefined, 0, 5, false, true, {}, []]) {
+      expect(message(input), String(input)).toContain("empty input");
+    }
+    // Text that is not empty is not "empty input", and a non-string that is truthy is refused, not read.
+    expect(message(" ")).not.toContain("empty input");
+  });
+
+  it("says 'empty after trim' for spaces only, and 'could not parse' or 'failed validation' for the rest", () => {
+    expect(message("   ")).toContain("empty after trim");
+    expect(message("\t\n")).toContain("empty after trim");
+    expect(message("abc")).toContain("could not parse");
+    expect(message("0501")).toContain("failed validation");
+  });
+});
+
+describe("maskPhone: the edges", () => {
+  it("ignores spaces around the number, and leaves a short one whole", async () => {
+    const { maskPhone } = await import("./phone");
+    expect(maskPhone("  +972501234567  ")).toBe("+9725…4567");
+    // Nine characters or fewer are returned as they are; ten are masked.
+    expect(maskPhone("+97250123")).toBe("+97250123");
+    expect(maskPhone("+972501234")).toBe("+9725…1234");
+    expect(maskPhone("")).toBe("");
+  });
+});
+
+describe("isSmsDeliverable and its error, whole and in words", () => {
+  it("is an Israeli mobile number from its first character to its last", () => {
+    expect(isSmsDeliverable("+972501234567")).toBe(true);
+    for (const bad of ["x+972501234567", " +972501234567", "+972501234567x", "+9725012345678", "+97250123456", "972501234567", "0501234567"]) {
+      expect(isSmsDeliverable(bad), bad).toBe(false);
+    }
+  });
+
+  it("says which of the two it is: another country, or not a mobile", () => {
+    const failure = (e164: string) => {
+      try {
+        assertSmsDeliverable(tel(e164));
+      } catch (e) {
+        return e as PhoneNotSmsDeliverableError;
+      }
+      throw new Error("did not throw");
+    };
+    const foreign = failure("+12025550123");
+    expect(foreign.reason).toBe("foreign_region");
+    expect(foreign.message).toContain("outside the +972 SMS region");
+    const landline = failure("+97221234567");
+    expect(landline.reason).toBe("not_mobile");
+    expect(landline.message).toContain("not an Israeli mobile number");
+    expect(landline.message).not.toContain("outside");
+  });
+});
+
+describe("Palestinian numbers (+970): kept and shown, never sent a code", () => {
+  const PS = "+970599123456";
+
+  it("normalise and read as E.164, however they are typed", () => {
+    for (const typed of [PS, "+970 59 912 3456", "+970-599-123-456", "00970599123456"]) {
+      expect(normalizePhone(typed), typed).toBe(PS);
+    }
+    expect(isE164(PS)).toBe(true);
+    expect(parseE164(PS)).toBe(PS);
+  });
+
+  it("are not deliverable by SMS, as another region, from the first digit to the last", () => {
+    for (const ps of [PS, "+970569123456", "+970599000000"]) expect(isSmsDeliverable(ps), ps).toBe(false);
+    for (const odd of ["x+970599123456", "+970599123456x", "970599123456"]) expect(isSmsDeliverable(odd), odd).toBe(false);
+    try {
+      assertSmsDeliverable(tel(PS));
+      throw new Error("did not throw");
+    } catch (e) {
+      expect(e).toBeInstanceOf(PhoneNotSmsDeliverableError);
+      expect((e as PhoneNotSmsDeliverableError).reason).toBe("foreign_region");
+      expect((e as Error).message).toContain("outside the +972 SMS region");
+    }
+  });
+
+  it("have no SMS recipient, like any number outside +972", () => {
+    expect(() => toSmsRecipient(tel(PS))).toThrow(PhoneNotSmsDeliverableError);
+  });
+
+  it("are masked and shown like the others", async () => {
+    const { maskPhone } = await import("./phone");
+    expect(maskPhone(PS)).toBe("+9705…3456");
+    expect(maskPhone(`  ${PS} `)).toBe("+9705…3456");
+    expect(formatPhoneDisplay(PS)).toBe("0599 123 456");
+  });
+});
+

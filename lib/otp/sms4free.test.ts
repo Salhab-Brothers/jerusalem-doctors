@@ -3,6 +3,7 @@ import {
   SMS4FREE_STATUS,
   buildSendPayload,
   parseSendResponse,
+  replyExcerpt,
 } from "./sms4free";
 
 const creds = { key: "K", user: "0500000000", pass: "P", sender: "JDoctors" };
@@ -86,3 +87,24 @@ describe("SMS4FREE_STATUS", () => {
     expect(SMS4FREE_STATUS[-4]?.label).toContain("balance");
   });
 });
+
+describe("replyExcerpt: what a log may hold of a reply we could not read", () => {
+  it("is the reply as one quoted line, cut at 40 characters", () => {
+    expect(replyExcerpt("4.0")).toBe('"4.0"');
+    expect(replyExcerpt("  1e2\n")).toBe('"1e2"');
+    expect(replyExcerpt("<html>\n  <body>\toops</body>\n</html>")).toBe('"<html> <body> oops</body> </html>"');
+    expect(replyExcerpt("a".repeat(40))).toBe(`"${"a".repeat(40)}"`);
+    expect(replyExcerpt("a".repeat(41))).toBe(`"${"a".repeat(40)}…"`);
+    expect(replyExcerpt("")).toBe('""');
+  });
+
+  it("masks every run of five digits or more, so a number or a code never reaches a log", () => {
+    expect(replyExcerpt("Invalid recipient 0501234567 code 482913")).toBe('"Invalid recipient # code #"');
+    expect(replyExcerpt("12345")).toBe('"#"');
+    expect(replyExcerpt("1234")).toBe('"1234"');
+    expect(replyExcerpt("972501234567")).toBe('"#"');
+    // Cut after masking, so masking cannot be undone by the cut.
+    expect(replyExcerpt(`${"a".repeat(38)}0501234567`)).toBe(`"${"a".repeat(38)}#"`);
+  });
+});
+

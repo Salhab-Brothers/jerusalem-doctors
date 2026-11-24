@@ -91,6 +91,17 @@ export function buildSendPayload(
  * Returns null when the body is neither, see the caller for why that is
  * deliberately not treated as a failed send.
  */
+/**
+ * The start of a reply we could not read, for the error message, so that a
+ * change in what the provider answers shows in the logs and not only as
+ * "sms4free_unreadable". Runs of five digits or more are masked: a reply can
+ * echo the recipient's number or the code, and neither may reach a log.
+ */
+export function replyExcerpt(raw: string): string {
+  const flat = raw.replace(/\s+/g, " ").replace(/\d{5,}/g, "#").trim();
+  return JSON.stringify(flat.length > 40 ? `${flat.slice(0, 40)}…` : flat);
+}
+
 export function parseSendResponse(
   raw: string,
 ): { status: number; message?: string | undefined } | null {
@@ -222,7 +233,7 @@ export class Sms4FreeOtpSender implements OtpSender {
     const parsed = parseSendResponse(raw);
     if (!parsed) {
       throw new OtpProviderError(
-        "SMS4FREE send failed: unparseable response body",
+        `SMS4FREE send failed: unparseable response body ${replyExcerpt(raw)}`,
         false,
         undefined,
         "sms4free_unreadable",
@@ -297,10 +308,11 @@ export async function fetchAvailableSms(): Promise<number> {
     );
   }
 
-  const parsed = parseSendResponse(await res.text());
+  const raw = await res.text();
+  const parsed = parseSendResponse(raw);
   if (!parsed) {
     throw new OtpProviderError(
-      "SMS4FREE balance check failed: unparseable response body",
+      `SMS4FREE balance check failed: unparseable response body ${replyExcerpt(raw)}`,
       false,
     );
   }
