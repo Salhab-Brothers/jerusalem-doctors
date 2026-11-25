@@ -41,8 +41,22 @@ export function matchKey(s: string): string {
     .trim();
 }
 
+// An institution's comparable names, worked out once. matchInstitution reads
+// them for every institution on every workplace, so recomputing made relinking
+// cost about 2 ms per workplace (a few seconds for a thousand, in an admin's
+// request); cached it is about 10 microseconds. Keyed by the object: nothing
+// edits an Institution after it is fetched, and the next fetch makes new
+// objects, so a changed name or alias is picked up and the old entries are
+// collected with the old objects.
+const keyCache = new WeakMap<Institution, string[]>();
+
 function keysOf(i: Institution): string[] {
-  return [i.name_ar, i.name_he ?? "", ...i.aliases].map(matchKey).filter((k) => k.length >= 3);
+  let keys = keyCache.get(i);
+  if (!keys) {
+    keys = [i.name_ar, i.name_he ?? "", ...i.aliases].map(matchKey).filter((k) => k.length >= 3);
+    keyCache.set(i, keys);
+  }
+  return keys;
 }
 
 /** The institution a workplace name belongs to, or null (none or ambiguous). */
@@ -153,7 +167,9 @@ export async function relinkWorkplaces(
   for (const w of rows) {
     const target = matchInstitution(institutions, w.name, w.workplace_type);
     if (target !== w.institution_id) {
-      moves.set(target, [...(moves.get(target) ?? []), w.id]);
+      const ids = moves.get(target);
+      if (ids) ids.push(w.id);
+      else moves.set(target, [w.id]);
     }
     if (!target && w.workplace_type !== "clinic") {
       unmatched.set(w.name, (unmatched.get(w.name) ?? 0) + 1);
