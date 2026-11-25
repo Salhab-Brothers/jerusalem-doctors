@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+import type { WorkplaceType } from "@/lib/workplace";
 import { db } from "@/test/fakeSupabase";
 import { type Institution, institutionsMatching, matchInstitution, matchKey, withHmoIds } from "./institutions";
 import { INSTITUTIONS_SEED } from "./institutionsSeed";
@@ -211,3 +212,100 @@ describe("Sheba and Assaf Harofeh are different hospitals", () => {
     expect(shared).toEqual([]);
   });
 });
+
+// The matching as it was before the institutions' keys were cached: each key
+// worked out again on every call. The cached version must answer exactly as this does.
+const keysFresh = (i: Institution) => [i.name_ar, i.name_he ?? "", ...i.aliases].map(matchKey).filter((k) => k.length >= 3);
+function matchReference(institutions: readonly Institution[], name: string, workplaceType: WorkplaceType): string | null {
+  const exact = matchKey(name);
+  const exactHits = institutions.filter((i) => keysFresh(i).includes(exact));
+  if (exactHits.length === 1) return exactHits[0]?.id ?? null;
+  const key = ` ${exact} `;
+  const matched = institutions
+    .filter((i) => i.kind !== "hospital" || workplaceType === "hospital")
+    .map((i) => ({ i, all: keysFresh(i), keys: keysFresh(i).filter((k) => key.includes(k)) }))
+    .filter((x) => x.keys.length > 0);
+  const hits = matched
+    .filter((x) => !matched.some((o) => o !== x && x.keys.every((k) => o.all.some((ok) => ok !== k && ok.includes(k)))))
+    .map((x) => x.i);
+  if (hits.length === 1) return hits[0]?.id ?? null;
+  const hospitals = hits.filter((i) => i.kind === "hospital");
+  return workplaceType === "hospital" && hospitals.length === 1 ? (hospitals[0]?.id ?? null) : null;
+}
+
+const TYPES: WorkplaceType[] = ["hospital", "clinic", "hmo"];
+
+describe("matchInstitution with its keys cached", () => {
+  // Every production name, every spelling of every institution, two institutions
+  // named together, a spelling with a word added, and names that are nothing.
+  const names = [
+    ...REAL.map(([name]) => name),
+    ...LIST.flatMap((i) => [i.name_ar, i.name_he ?? "", ...i.aliases]),
+    ...LIST.flatMap((a, n) => [`${a.name_ar} و ${LIST[(n * 7 + 3) % LIST.length]!.name_ar}`, `${a.name_ar} فرع ${n}`, `${a.aliases[0] ?? a.name_ar} القدس`]),
+    "", "  ", "عيادة خاصة", "xyz", "123456", "مستشفى", "مركز", "القدس", "בית חולים",
+  ];
+
+  it("answers as the uncached matching does, for every name and every workplace type", () => {
+    let none = 0;
+    let some = 0;
+    for (const name of names) {
+      for (const type of TYPES) {
+        expect(matchInstitution(LIST, name, type), `${name} / ${type}`).toBe(matchReference(LIST, name, type));
+        if (matchInstitution(LIST, name, type)) some++;
+        else none++;
+      }
+    }
+    // The comparison is only worth something if it saw both kinds of answer.
+    expect(some).toBeGreaterThan(100);
+    expect(none).toBeGreaterThan(100);
+  });
+
+  it("answers the same the second time, and the same with a fresh copy of the list", () => {
+    const copy: Institution[] = LIST.map((i) => ({ ...i, aliases: [...i.aliases] }));
+    for (const name of names.slice(0, 120)) {
+      const first = matchInstitution(LIST, name, "hospital");
+      expect(matchInstitution(LIST, name, "hospital"), name).toBe(first);
+      expect(matchInstitution(copy, name, "hospital"), name).toBe(first);
+    }
+  });
+
+  it("picks up a changed institution when the next fetch hands out new objects", () => {
+    const before: Institution[] = [{ id: "x", name_ar: "مستشفى الأمل", name_he: null, kind: "hospital", aliases: [] }];
+    expect(matchInstitution(before, "دار الشفاء", "hospital")).toBeNull();
+    const after: Institution[] = [{ ...before[0]!, aliases: ["دار الشفاء"] }];
+    expect(matchInstitution(after, "دار الشفاء", "hospital")).toBe("x");
+    // The old objects still answer as they did: nothing was shared between the two lists.
+    expect(matchInstitution(before, "دار الشفاء", "hospital")).toBeNull();
+    const renamed: Institution[] = [{ ...after[0]!, name_ar: "مستشفى النور", aliases: [] }];
+    expect(matchInstitution(renamed, "مستشفى الأمل", "hospital")).toBeNull();
+    expect(matchInstitution(renamed, "مستشفى النور", "hospital")).toBe("x");
+  });
+
+  it("stays fast: 1,000 workplaces against 150 institutions in well under a second (it took about 2 s before keys were cached)", () => {
+    const many: Institution[] = Array.from({ length: 150 }, (_, i) => ({
+      id: `i${i}`, name_ar: `${LIST[i % LIST.length]!.name_ar} فرع ${i}`, name_he: i % 2 ? `כהן${i}` : null,
+      kind: (["hospital", "hmo", "clinic_network"] as const)[i % 3]!, aliases: [`alias ${i}a`, `نسخة ${i}`, `فرع ${i} الشمالي`],
+    }));
+    const started = performance.now();
+    for (let n = 0; n < 1_000; n++) matchInstitution(many, `${LIST[n % LIST.length]!.name_ar} ${n % 40}`, TYPES[n % 3]!);
+    expect(performance.now() - started).toBeLessThan(600);
+  });
+});
+
+describe("relinkWorkplaces with many rows going to one institution", () => {
+  it("moves them all, in order, in chunks of 150", async () => {
+    const { db } = await import("@/test/fakeSupabase");
+    const { relinkWorkplaces } = await import("./institutions");
+    db.reset();
+    db.queue("institutions", { data: [{ id: "clalit", name_ar: "كلاليت", name_he: "כללית", kind: "hmo", aliases: [] }] });
+    db.queue("doctor_workplaces", {
+      data: Array.from({ length: 400 }, (_, i) => ({ id: `w${i}`, name: "كلاليت", workplace_type: "clinic", institution_id: null })),
+    });
+    const result = await relinkWorkplaces(db.client as never);
+    expect(result).toEqual({ changed: 400, unmatched: [] });
+    const chunks = db.argsOf("doctor_workplaces", "in").map(([, ids]) => ids as string[]);
+    expect(chunks.map((c) => c.length)).toEqual([150, 150, 100]);
+    expect(chunks.flat()).toEqual(Array.from({ length: 400 }, (_, i) => `w${i}`));
+  });
+});
+
